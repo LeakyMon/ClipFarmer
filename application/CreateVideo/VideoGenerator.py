@@ -47,9 +47,14 @@ class VideoGenerator:
 
         # Determine the duration or length for the clip
         self.clip_duration = self.get_clip_duration()
-
         # Call create_video with modifications and video data
         self.filepath = self.create_video()
+        self.thumbnail = None
+
+    def getFilepath(self):
+        return self.filepath
+    def getThumbnail(self):
+        return self.thumbnail
 
     def get_clip_duration(self):
         """Determine whether to use 'length' or 'duration' based on what's provided."""
@@ -104,7 +109,7 @@ class VideoGenerator:
 
         print("Final path: ", final_path)
         print("Thumbnail path: ", output_thumbnail)
-
+        self.thumbnail = output_thumbnail
         #self.add_to_library(final_path, output_thumbnail)
         return final_path
 
@@ -121,7 +126,6 @@ class VideoGenerator:
 
     from textwrap import wrap  # To easily split text into multiple lines
 
-    from textwrap import wrap  # To split text into multiple lines
 
     def apply_caption(self, video_clip, caption_text):
         """Apply the caption and emojis to the video using MoviePy."""
@@ -270,7 +274,7 @@ class VideoGenerator:
         """Combine one or two video clips based on the user's selection."""
         target_width = 720
         target_height = 1280
-
+        original_audio = None
         first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration)
 
         # Handle letterbox if enabled
@@ -281,11 +285,13 @@ class VideoGenerator:
         if second_video:
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
             combined_clip = clips_array([[second_clip], [first_clip]])  # Place second video on top, first on bottom
+            original_audio = second_clip.audio
         else:
-            combined_clip = first_clip  # Single video
-
+            combined_clip = first_clip
+            original_audio = first_clip.audio  # Single video
+        print("audioFILEPATH", audioFilePath)
         # Extract the audio from the appropriate clip
-        original_audio = combined_clip.audio  # Get audio from the combined clip
+        #original_audio = combined_clip.audio  # Get audio from the combined clip
 
         # Only write the audio if it's valid and present
         if original_audio is not None:
@@ -293,9 +299,16 @@ class VideoGenerator:
         else:
             print("No audio detected in the video, proceeding without audio.")
 
+        if combined_clip.audio is not None:
+            original_audio = combined_clip.audio
+            original_audio.write_audiofile(audioFilePath)
+        else:
+            print("No audio detected in the video, proceeding without audio.")
+
+
         # Write the video with the audio (if present)
         combined_clip.write_videofile(os.path.join(output_dir, "combined_output.mp4"), audio_codec='aac')
-        original_audio.write_audiofile(audioFilePath)
+        #original_audio.write_audiofile(audioFilePath)
 
 
         self.combinedFilePath = os.path.join(output_dir, "combined_output.mp4")
@@ -528,6 +541,8 @@ class VideoGenerator:
 
         print(f"Video '{title}' successfully uploaded to Firebase Storage and metadata saved in Firestore.")
         self.cleanup_temp_files()
+
+   
 
     def cleanup_temp_files(self):
         """Delete all temporary files like .mp4, .wav, .ass, and .srt."""

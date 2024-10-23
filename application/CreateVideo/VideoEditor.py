@@ -7,7 +7,6 @@ import sys
 from .VideoGenerator import VideoGenerator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import get_videos_from_folder  # Import function to fetch videos
-
 ### --- BOTTOM AUDIO IS SECOND CLIP --- ###
 
 
@@ -246,7 +245,12 @@ class CreateVideoPage(ctk.CTkFrame):
                 'thumbnail': 'https://firebasestorage.googleapis.com/v0/b/clipfarmer-f8a79.appspot.com/o/Overlay%2Fthumbnails%2FWorldOfTshirts.mp4_thumbnail.jpg?alt=media&token=5f427b45-ce7a-40fc-b6b9-4ecf51f564dc',
                 'url': 'https://firebasestorage.googleapis.com/v0/b/clipfarmer-f8a79.appspot.com/o/Overlay%2Fvideos%2FWorldOfTshirts.mp4?alt=media&token=997f3735-a151-457a-8863-098f046c4c95'
             })
-        
+        if folder_name == "Background":
+            video_list.append({
+                'title': 'Minecraft',
+                'thumbnail': "https://storage.googleapis.com/clipfarmer-f8a79.appspot.com/Background/thumbnails/Minecraft.mp4_thumbnail.jpg",
+                'url': "https://storage.googleapis.com/clipfarmer-f8a79.appspot.com/Background/videos/Minecraft.mp4"
+            })
         return video_list
 
 
@@ -322,6 +326,8 @@ class CreateVideoPage(ctk.CTkFrame):
         # After the video generation process is completed
             print(f"Video generated and saved to: {video_generator.filepath}")
             self.reset()
+            self.controller.videoplayer_frame.load_video(video_generator.getFilepath())
+            self.controller.select_frame_by_name("Video Player")
         else:
             return
         ### --- HERE IS WHERE WE NEED TO RENDER THE VIDEO ACCORDING TO THE MODIFICATIONS --- ###
@@ -395,4 +401,5 @@ class CreateVideoPage(ctk.CTkFrame):
         self.duration_entry.delete(0, tk.END)  # Clear the duration entry
         self.length_entry.delete(0, tk.END)  # Clear the length entry
         self.title_entry.delete(0, tk.END)  # Clear the title entry
+        
 
