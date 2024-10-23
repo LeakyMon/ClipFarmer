@@ -87,3 +87,48 @@ def delete_video_from_firebase(video_id, folder_type, file_name, thumbnail_name)
     thumbnail_blob.delete()
     print(f"Deleted video and thumbnail from Firebase Storage: {file_name} and {thumbnail_name}")
 
+
+def add_song_metadata(title, url, thumbnail_url, folder_type, duration):
+    """Adds a new video document to the 'videos' collection in Firestore."""
+    
+    # Generate a unique ID for the document
+    song_id = db.collection('music').document().id
+
+    # Define the video data
+    song_data = {
+        'title': title,
+        'url': url,
+        'thumbnail': thumbnail_url,
+        'folder': folder_type,
+        'id': song_id,
+        'duration':duration
+    }
+
+    # Add the document to Firestore
+    db.collection('music').document(song_id).set(song_data)
+    print(f"Metadata for '{title}' saved in Firestore with ID: {song_id}")
+
+
+def check_if_song_exists(title):
+    """Checks if a video with the given title already exists in Firestore."""
+    videos_ref = db.collection('music')
+    query = videos_ref.where('title', '==', title).stream()
+
+    for doc in query:
+        return True  # Title already exists
+    return False
+
+
+def delete_song_from_firebase(song_id, folder_type, file_name, thumbnail_name):
+    """Deletes a video from both Firestore and Firebase Storage."""
+    # Delete video from Firestore
+    db.collection('music').document(song_id).delete()
+    print(f"Deleted video metadata from Firestore with ID: {song_id}")
+
+    # Delete video file from Firebase Storage
+    video_blob = bucket.blob(f'{folder_type}/songs/{file_name}')
+    thumbnail_blob = bucket.blob(f'{folder_type}/thumbnails/{thumbnail_name}')
+    
+    video_blob.delete()
+    thumbnail_blob.delete()
+    print(f"Deleted video and thumbnail from Firebase Storage: {file_name} and {thumbnail_name}")

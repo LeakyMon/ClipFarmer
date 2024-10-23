@@ -6,6 +6,8 @@ from UploadVideo.Upload import UploadFrame
 from Library.Library import LibraryFrame
 from VideoPlayer.VideoPlayer import VideoPlayerFrame
 from HomeFrame.HomeFrame import HomeFrame  # Import the new HomeFrame class
+from Youtube.Youtube import YoutubeUpload
+
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -34,7 +36,7 @@ class App(customtkinter.CTk):
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(6, weight=1)
+        self.navigation_frame.grid_rowconfigure(7, weight=1)
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Image Example", image=self.logo_image,
                                                              compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -65,10 +67,18 @@ class App(customtkinter.CTk):
                                                         image=self.add_user_image, anchor="w", command=self.videoplayer_button_event)
         self.videoplayer_button.grid(row=5, column=0, sticky="ew")
 
+        self.upload_to_youtube_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Youtube",
+                                                        fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                                        image=self.add_user_image, anchor="w", command=self.upload_to_youtube_button_event)
+        self.upload_to_youtube_button.grid(row=6, column=0, sticky="ew")
+
+
+        self.vertical_separator = customtkinter.CTkFrame(self.navigation_frame, width=2, fg_color="white")
+        self.vertical_separator.grid(row=0, column=1, rowspan=8, sticky="ns")  # Span all rows vertically
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
-        self.appearance_mode_menu.grid(row=6, column=0, padx=20, pady=20, sticky="s")
+        self.appearance_mode_menu.grid(row=7, column=0, padx=20, pady=20, sticky="s")
 
         # Create the new home frame (replace old home frame)
         self.home_frame = HomeFrame(self, controller=self)
@@ -85,6 +95,9 @@ class App(customtkinter.CTk):
         # create video player frame
         self.videoplayer_frame = VideoPlayerFrame(self, controller=self)
 
+        self.upload_to_youtube_frame = YoutubeUpload(self, controller=self)
+
+
         # select default frame
         self.select_frame_by_name("home")
 
@@ -95,6 +108,7 @@ class App(customtkinter.CTk):
         self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Upload" else "transparent")
         self.library_button.configure(fg_color=("gray75", "gray25") if name == "Library" else "transparent")
         self.videoplayer_button.configure(fg_color=("gray75", "gray25") if name == "Video Player" else "transparent")
+        #self.upload_to_youtube_button.configure(fg_color=("gray75", "gray25") if name == "Youtube" else "transparent")
 
         # show selected frame
         # Replace the use of pack for home_frame with grid
@@ -119,6 +133,10 @@ class App(customtkinter.CTk):
             self.videoplayer_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.videoplayer_frame.grid_forget()
+        if name == "Youtube":
+            self.upload_to_youtube_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.upload_to_youtube_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
@@ -134,6 +152,9 @@ class App(customtkinter.CTk):
 
     def videoplayer_button_event(self):
         self.select_frame_by_name("Video Player")
+
+    def upload_to_youtube_button_event(self):
+        self.select_frame_by_name("Youtube")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)

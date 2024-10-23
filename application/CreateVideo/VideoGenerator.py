@@ -295,6 +295,8 @@ class VideoGenerator:
 
         # Write the video with the audio (if present)
         combined_clip.write_videofile(os.path.join(output_dir, "combined_output.mp4"), audio_codec='aac')
+        original_audio.write_audiofile(audioFilePath)
+
 
         self.combinedFilePath = os.path.join(output_dir, "combined_output.mp4")
 

@@ -34,14 +34,14 @@ class CreateVideoPage(ctk.CTkFrame):
             "single_video": False,
             "letterbox": False
         }
-
+        self.emoji = False
         # Title for Create Video page (centered)
         self.label = ctk.CTkLabel(self, text="Create Video", font=ctk.CTkFont(size=24, weight="bold"))
-        self.label.pack(pady=20)
+        self.label.pack(pady=10)
 
         # Main container for canvas and modifications
         self.main_frame = ctk.CTkFrame(self)
-        self.main_frame.pack(pady=20)
+        self.main_frame.pack(pady=15)
 
         # Video canvas (centered middle)
         self.video_canvas = ctk.CTkCanvas(self.main_frame, width=270, height=480, bg="black")  # Scaled down by a factor of 4
@@ -69,15 +69,15 @@ class CreateVideoPage(ctk.CTkFrame):
        # Scrollable frame for folder selection (left side for videos)
         # Container frame for both scrollable frames (for videos and music)
         self.scrollable_container = ctk.CTkFrame(self)
-        self.scrollable_container.pack(fill="both", expand=True, padx=20, pady=20)
+        self.scrollable_container.pack(fill="both", expand=True, padx=20, pady=15)
 
         # Scrollable frame for folder selection (left side for videos)
         self.scrollable_frame = ctk.CTkScrollableFrame(self.scrollable_container, width=400, height=200)
-        self.scrollable_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        self.scrollable_frame.pack(side="left", fill="both", expand=True, padx=10, pady=5)
 
         # Scrollable frame for music selection (right side for music)
         self.scrollable_frame_music = ctk.CTkScrollableFrame(self.scrollable_container, width=400, height=200)
-        self.scrollable_frame_music.pack(side="right", fill="both", expand=True, padx=10, pady=10)
+        self.scrollable_frame_music.pack(side="right", fill="both", expand=True, padx=10, pady=5)
 
         # Create two folders: Background and Overlay for videos
         self.create_folder_button("Background", self.folder_photo)
@@ -132,19 +132,19 @@ class CreateVideoPage(ctk.CTkFrame):
     def create_mods(self):
         # Add the subtitle switch to the modifications frame
         self.subtitle_var1 = ctk.BooleanVar(value=False)
-        self.subtitle_var_top = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Top", variable=self.subtitle_var1)
+        self.subtitle_var_top = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Vid 1", variable=self.subtitle_var1)
         self.subtitle_var_top.grid(row=0, column=0, pady=10, padx=20, sticky="w")
 
         self.subtitle_var2 = ctk.BooleanVar(value=False)
-        self.subtitle_var_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Bottom", variable=self.subtitle_var2)
+        self.subtitle_var_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Vid 2", variable=self.subtitle_var2)
         self.subtitle_var_bottom.grid(row=1, column=0, pady=10, padx=20, sticky="w")
 
         self.audio_var_top = ctk.BooleanVar(value=False)
-        self.audio_top = ctk.CTkSwitch(master=self.modifications_frame, text="Top Audio", variable=self.audio_var_top)
+        self.audio_top = ctk.CTkSwitch(master=self.modifications_frame, text="Audio 1", variable=self.audio_var_top)
         self.audio_top.grid(row=2, column=0, pady=10, padx=20, sticky="w")
 
         self.audio_var_bottom = ctk.BooleanVar(value=False)
-        self.audio_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Bottom Audio", variable=self.audio_var_bottom)
+        self.audio_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Audio 2", variable=self.audio_var_bottom)
         self.audio_bottom.grid(row=3, column=0, pady=10, padx=20, sticky="w")
 
         self.letterbox_var = ctk.BooleanVar(value=False)
@@ -169,8 +169,8 @@ class CreateVideoPage(ctk.CTkFrame):
         
         self.submit_button.grid(row=9, column=0, pady=10, padx=20, sticky="w")
 
-        self.emoji_button = ctk.CTkButton(self.submit_frame, text="Add Emoji", fg_color="yellow",
-                                 command=self.add_emoji())
+        self.emoji_button = ctk.CTkButton(self.submit_frame, text="Add Emoji", fg_color="blue",
+                                 command=self.add_emoji)
         
         self.emoji_button.grid(row=8, column=0, pady=10, padx=20, sticky="w")
 
@@ -182,13 +182,15 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def add_emoji(self):
         print("adding emoji")
-        emoji_window = tk.Toplevel(self)
-        emoji_window.title("Select Emoji")
-        self.modifications["emoji"] = True
-        emojis = ["😂", "😊", "👍", "🔥", "❤️", "🎉", "😎"]
-        for emoji in emojis:
-            emoji_button = ctk.CTkButton(emoji_window, text=emoji, command=lambda e=emoji: self.add_emoji_to_caption(e))
-            emoji_button.pack(pady=5, padx=10)
+        self.emoji = True
+        if self.emoji == True:
+            emoji_window = tk.Toplevel(self)
+            emoji_window.title("Select Emoji")
+            self.modifications["emoji"] = True
+            emojis = ["😂", "😊", "👍", "🔥", "❤️", "🎉", "😎"]
+            for emoji in emojis:
+                emoji_button = ctk.CTkButton(emoji_window, text=emoji, command=lambda e=emoji: self.add_emoji_to_caption(e))
+                emoji_button.pack(pady=5, padx=10)
 
     def add_emoji_to_caption(self, emoji):
         """Adds the selected emoji to the caption entry."""
@@ -376,8 +378,7 @@ class CreateVideoPage(ctk.CTkFrame):
             "length": 0,
             "title": '',
             "single_video": False,
-            "letterbox":False,
-            "emoji":False
+            "letterbox":False
         }
 
         # Reset the canvas (remove displayed videos)
