@@ -12,6 +12,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata  # Import function to fetch videos
 # Get the directory where main.py is located
 
+from moviepy.editor import VideoClip, ImageClip, CompositeVideoClip
+from PIL import Image, ImageDraw, ImageFont
+from textwrap import wrap  # To easily split text into multiple lines
+
 # Setup directories for the project
 # Hard-coded path to where you want the output files saved (application/)
 output_dir = r"C:/Users/hecto/Desktop/ClipFarmer/application"
@@ -20,6 +24,7 @@ subtitle_file = "subtitles.ass"
 newsubtitle = os.path.join(output_dir, subtitle_file)
 newoutputdir = os.path.join(output_dir, "combined_output_with_subs.mp4")
 audioFilePath = os.path.join(output_dir, "output_audio.wav")
+from moviepy.editor import ColorClip
 
 os.environ["IMAGEMAGICK_BINARY"] = "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI"
 
@@ -58,28 +63,40 @@ class VideoGenerator:
     def create_video(self):
         outputPath = os.path.join(output_dir, "output_subtitles.mp4")
         print("output path in create video", outputPath)
-        ## --- STEP 1. DOWNLOAD VIDEOS --- ##
+        
+        # --- STEP 1. DOWNLOAD VIDEOS --- #
         first_clip_path = self.download_video(self.first_video_data['url'], "first_video.mp4")
         second_clip_path = None
         if not self.modifications['single_video']:
             second_clip_path = self.download_video(self.second_video_data['url'], "second_video.mp4")
 
-        ## --- STEP 2. FIND AUDIO/SUBTITLE SOURCE --- ##
+        # --- STEP 2. FIND AUDIO/SUBTITLE SOURCE --- #
         audio_source = first_clip_path if self.modifications['audio_top'] else second_clip_path
         subtitle_source = first_clip_path if self.modifications['subtitles_top'] else second_clip_path
         print("AUDIO SOURCE:", audio_source)
         print("SUBTITLE SOURCE", subtitle_source)
 
-        ## --- STEP 3. COMBINE VIDEOS --- ##
-        combined_clip = self.combine_videos(first_clip_path, second_clip_path)
+        # --- STEP 3. COMBINE VIDEOS --- #
+        combined_clip_path = self.combine_videos(first_clip_path, second_clip_path)
 
-        ## --- STEP 4. EXTRACT AUDIO FROM COMBINED VIDEO --- ##
-        ass_path = self.speechToText(audioFilePath)
+        # Reload the combined video as a VideoClip object after combining
+        combined_clip = VideoFileClip(combined_clip_path)
 
-        ## --- STEP 6. ADD SUBTITLES TO VIDEO --- ##
-        final_path = self.add_subtitles_with_ffmpeg(combined_clip, ass_path)
+        # --- STEP 4. CHECK IF CAPTION IS PROVIDED --- #
+        if self.modifications['caption'] != '':
+            print("caption exists")
+            # Apply the caption if it's provided and return the final video
+            combined_clip = self.apply_caption(combined_clip, self.modifications["caption"])
+            final_path = os.path.join(output_dir, "combined_output_with_caption.mp4")
+            combined_clip.write_videofile(final_path, audio_codec='aac')
+        else:
+            # --- STEP 5. EXTRACT AUDIO AND ADD SUBTITLES IF NO CAPTION --- #
+            ass_path = self.speechToText(audioFilePath)
 
-        ## --- STEP 7. GENERATE THUMBNAIL --- ##
+            # --- STEP 6. ADD SUBTITLES TO VIDEO --- #
+            final_path = self.add_subtitles_with_ffmpeg(combined_clip_path, ass_path)
+
+        # --- STEP 7. GENERATE THUMBNAIL --- #
         output_thumbnail = self.add_thumbnail(final_path)
 
         print("Final path: ", final_path)
@@ -87,6 +104,92 @@ class VideoGenerator:
 
         self.add_to_library(final_path, output_thumbnail)
         return final_path
+
+
+    def create_tiktok_text(self, size: tuple, message: str, fontColor, fnt=ImageFont.truetype('arial.ttf', 70)):
+        espacement = 13
+        W, H = size
+        image = Image.new('RGBA', size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        _, _, w, h = draw.textbbox((0, 0), message, font=fnt)
+        draw.rounded_rectangle(((W-w)/2 - espacement, (H-h)/2 - espacement, (W-w)/2 + w + espacement , (H-h)/2 + h + espacement), fill="white", radius=7)
+        draw.text(((W-w)/2, (H-h)/2), message, font=fnt, fill=fontColor)
+        return image
+
+    from textwrap import wrap  # To easily split text into multiple lines
+
+    from textwrap import wrap  # To split text into multiple lines
+
+    def apply_caption(self, video_clip, caption_text):
+        """Apply the caption to the video using MoviePy with smaller font, multiple lines, white background, and custom position."""
+        
+        # Ensure video_clip is a VideoClip object with a size attribute
+        if not isinstance(video_clip, VideoClip):
+            raise ValueError("Invalid video_clip passed to apply_caption. It must be a VideoClip object.")
+
+        # Set the maximum characters per line (e.g., 17 characters)
+        max_chars_per_line = 17
+        lines = wrap(caption_text, width=max_chars_per_line)  # Split text into multiple lines
+
+        # Reduce the font size for the caption
+        font_size = 32  # Adjust the font size to be smaller
+        fnt = ImageFont.truetype('arial.ttf', font_size)  # Use a smaller font size
+
+        # Create a drawing context to calculate text sizes
+        caption_image = Image.new('RGBA', (video_clip.size[0], video_clip.size[1]), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(caption_image)
+
+        # Calculate the total height for all lines of text
+        line_height = draw.textbbox((0, 0), "A", font=fnt)[3]  # Height of a single line
+        total_height = line_height * len(lines) + 40  # Add some padding
+        image_size = (video_clip.size[0], total_height)
+
+        # Create the image with the caption text and background
+        caption_image = Image.new('RGBA', image_size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(caption_image)
+
+        # Calculate the width of the longest line for the background rectangle
+        max_text_width = max(draw.textbbox((0, 0), line, font=fnt)[2] for line in lines)
+        padding = 20  # Padding around the text
+        rectangle_width = max_text_width + 2 * padding
+        rectangle_height = total_height
+
+        # Draw the white rounded rectangle as background
+        draw.rounded_rectangle(
+            ((image_size[0] - rectangle_width) / 2, 0, (image_size[0] + rectangle_width) / 2, rectangle_height),
+            fill="white", radius=15
+        )
+
+        # Draw each line of the caption, centered horizontally
+        y_offset = 20  # Start with some padding from the top
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=fnt)
+            w = bbox[2] - bbox[0]
+            draw.text(((image_size[0] - w) / 2, y_offset), line, font=fnt, fill="black")
+            y_offset += line_height  # Move the position down for the next line
+
+        # Save caption image as a temporary file
+        caption_filename = os.path.join(output_dir, f"caption_{id(caption_text)}.png")
+        caption_image.save(caption_filename)
+
+        # Create a MoviePy ImageClip for the caption
+        caption_clip = ImageClip(caption_filename).set_duration(video_clip.duration)
+
+        # Calculate Y-position to move the caption higher (e.g., 20% from the top)
+        video_height = video_clip.size[1]
+        y_position = video_height * 0.1  # Set the Y-position to be 20% from the top
+
+        # Set the custom position
+        caption_clip = caption_clip.set_pos(("center", y_position))  # Centered horizontally, 20% from top
+
+        # Overlay the caption on the video
+        final_clip = CompositeVideoClip([video_clip, caption_clip])
+
+        # Remove the temporary caption image
+        os.remove(caption_filename)
+
+        return final_clip
+
 
     def download_video(self, url, filename):
         """Download video from URL and save it to the output directory."""
@@ -103,22 +206,73 @@ class VideoGenerator:
 
     def combine_videos(self, first_video, second_video=None):
         """Combine one or two video clips based on the user's selection."""
-        first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration).without_audio()
-        second_clip = None
+        target_width = 720
+        target_height = 1280
+
+        first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration)
+
+        # Handle letterbox if enabled
+        if self.modifications["letterbox"] == True:
+            print("Handling letterbox")
+            first_clip = self.apply_letterbox(first_clip, target_width, target_height)
+
         if second_video:
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
             combined_clip = clips_array([[second_clip], [first_clip]])  # Place second video on top, first on bottom
         else:
             combined_clip = first_clip  # Single video
 
-        original_audio = second_clip.audio if second_clip else first_clip.audio
-        original_audio.write_audiofile(audioFilePath)
+        # Extract the audio from the appropriate clip
+        original_audio = combined_clip.audio  # Get audio from the combined clip
 
-        combined_clip = combined_clip.set_audio(original_audio)
+        # Only write the audio if it's valid and present
+        if original_audio is not None:
+            combined_clip = combined_clip.set_audio(original_audio)
+        else:
+            print("No audio detected in the video, proceeding without audio.")
+
+        # Write the video with the audio (if present)
         combined_clip.write_videofile(os.path.join(output_dir, "combined_output.mp4"), audio_codec='aac')
+
         self.combinedFilePath = os.path.join(output_dir, "combined_output.mp4")
 
         return self.combinedFilePath
+
+
+    from moviepy.editor import ColorClip
+
+    def apply_letterbox(self, clip, target_width, target_height):
+        """Resize the video to fit within a target aspect ratio (9:16) while adding black bars (letterboxing) if needed."""
+        
+        # Get the current width and height of the clip
+        clip_width, clip_height = clip.size
+        
+        # Calculate the aspect ratios
+        target_aspect_ratio = target_width / target_height
+        clip_aspect_ratio = clip_width / clip_height
+        
+        # Check if letterboxing is necessary (i.e., if the video is wider than the target aspect ratio)
+        if clip_aspect_ratio > target_aspect_ratio:
+            # The video is wider than the target, so we fit it by width and add black bars on top and bottom
+            new_width = target_width
+            new_height = new_width / clip_aspect_ratio
+            resized_clip = clip.resize(width=new_width)
+        else:
+            # The video is taller than or equal to the target, so we fit it by height and add black bars on the sides
+            new_height = target_height
+            new_width = new_height * clip_aspect_ratio
+            resized_clip = clip.resize(height=new_height)
+
+        # Create a black background with the target size
+        letterbox_clip = ColorClip(size=(target_width, target_height), color=(0, 0, 0))
+
+        # Composite the resized video on top of the black background, centered
+        final_clip = letterbox_clip.set_duration(clip.duration)
+        final_clip = final_clip.set_audio(clip.audio)  # Keep the audio from the original clip
+        final_clip = CompositeVideoClip([final_clip, resized_clip.set_pos("center")])
+
+        return final_clip
+
 
     def add_subtitles_with_ffmpeg(self, video_path, subtitle_path):
         """Add subtitles to the video using FFmpeg."""

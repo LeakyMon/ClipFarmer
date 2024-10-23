@@ -31,7 +31,8 @@ class CreateVideoPage(ctk.CTkFrame):
             "duration":'',
             "length":0,
             "title":'',
-            "single_video": False
+            "single_video": False,
+            "letterbox": False
         }
 
         # Title for Create Video page (centered)
@@ -146,17 +147,21 @@ class CreateVideoPage(ctk.CTkFrame):
         self.audio_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Bottom Audio", variable=self.audio_var_bottom)
         self.audio_bottom.grid(row=3, column=0, pady=10, padx=20, sticky="w")
 
+        self.letterbox_var = ctk.BooleanVar(value=False)
+        self.letterbox = ctk.CTkSwitch(master=self.modifications_frame, text="Letterbox", variable=self.letterbox_var)
+        self.letterbox.grid(row=4, column=0, pady=10, padx=20, sticky="w")
+
         self.caption_var = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Caption")
-        self.caption_var.grid(row=4, column=0, pady=10, padx=20, sticky="w")
+        self.caption_var.grid(row=5, column=0, pady=10, padx=20, sticky="w")
 
         self.duration_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Duration")
-        self.duration_entry.grid(row=5, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
+        self.duration_entry.grid(row=6, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
 
         self.length_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Length")
-        self.length_entry.grid(row=6, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
+        self.length_entry.grid(row=7, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
 
         self.title_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Title")
-        self.title_entry.grid(row=7, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
+        self.title_entry.grid(row=8, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
 
 
         self.submit_button = ctk.CTkButton(self.submit_frame, text="Submit", fg_color="blue",
@@ -191,7 +196,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.modifications["duration"] = self.duration_entry.get()  # Will be empty if not provided
         self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
         self.modifications["title"] = self.title_entry.get()
-        
+        self.modifications["letterbox"] = self.letterbox_var.get()
         # Check if there's a second video
         if self.first_video_data is None and self.second_video_data is None:
             print("Select a video")
@@ -330,7 +335,8 @@ class CreateVideoPage(ctk.CTkFrame):
             "duration": '',
             "length": 0,
             "title": '',
-            "single_video": False
+            "single_video": False,
+            "letterbox":False
         }
 
         # Reset the canvas (remove displayed videos)
@@ -341,7 +347,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.subtitle_var2.set(False)  # Reset the "Subtitles Bottom" switch
         self.audio_var_top.set(False)  # Reset the "Top Audio" switch
         self.audio_var_bottom.set(False)  # Reset the "Bottom Audio" switch
-
+        self.letterbox_var.set(False)
         # Clear text input fields
         self.caption_var.delete(0, tk.END)  # Clear the caption entry
         self.duration_entry.delete(0, tk.END)  # Clear the duration entry
