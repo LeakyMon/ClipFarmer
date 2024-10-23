@@ -50,8 +50,11 @@ def check_if_title_exists(title):
         return True  # Title already exists
     return False
 
+
+
 def get_videos_from_folder(folder_type):
     """Fetches videos from a specified folder (Background or Overlay) in Firestore."""
+    print("getting videos from", folder_type)
     videos_ref = db.collection('videos')
     query = videos_ref.where('folder', '==', folder_type).stream()
 
@@ -65,6 +68,7 @@ def get_videos_from_folder(folder_type):
             'thumbnail': video_data.get('thumbnail'),
             'url': video_data.get('url')
         })
+    print("RETURNING")
     return video_list
 
 

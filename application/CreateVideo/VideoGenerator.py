@@ -8,6 +8,7 @@ from datetime import timedelta
 import json
 import requests
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata  # Import function to fetch videos
 # Get the directory where main.py is located
@@ -15,6 +16,8 @@ from backend.firebase import check_if_title_exists, upload_file_to_storage, add_
 from moviepy.editor import VideoClip, ImageClip, CompositeVideoClip
 from PIL import Image, ImageDraw, ImageFont
 from textwrap import wrap  # To easily split text into multiple lines
+
+# Create an image with size 300x100
 
 # Setup directories for the project
 # Hard-coded path to where you want the output files saved (application/)
@@ -102,7 +105,7 @@ class VideoGenerator:
         print("Final path: ", final_path)
         print("Thumbnail path: ", output_thumbnail)
 
-        self.add_to_library(final_path, output_thumbnail)
+        #self.add_to_library(final_path, output_thumbnail)
         return final_path
 
 
@@ -121,45 +124,48 @@ class VideoGenerator:
     from textwrap import wrap  # To split text into multiple lines
 
     def apply_caption(self, video_clip, caption_text):
-        """Apply the caption to the video using MoviePy with smaller font, multiple lines, white background, and custom position."""
+        """Apply the caption and emojis to the video using MoviePy."""
         
-        # Ensure video_clip is a VideoClip object with a size attribute
+        # Ensure video_clip is a VideoClip object
         if not isinstance(video_clip, VideoClip):
             raise ValueError("Invalid video_clip passed to apply_caption. It must be a VideoClip object.")
-
+        
+        # Extract emojis from the caption and remove them from the text
+        emojis, updated_caption = self.extract_emojis_from_caption()
+        
         # Set the maximum characters per line (e.g., 17 characters)
         max_chars_per_line = 17
-        lines = wrap(caption_text, width=max_chars_per_line)  # Split text into multiple lines
-
+        lines = wrap(updated_caption, width=max_chars_per_line)  # Split updated caption into multiple lines
+        
         # Reduce the font size for the caption
         font_size = 32  # Adjust the font size to be smaller
-        fnt = ImageFont.truetype('arial.ttf', font_size)  # Use a smaller font size
-
+        fnt = ImageFont.truetype('arial.ttf', font_size)
+        
         # Create a drawing context to calculate text sizes
         caption_image = Image.new('RGBA', (video_clip.size[0], video_clip.size[1]), (0, 0, 0, 0))
         draw = ImageDraw.Draw(caption_image)
-
+        
         # Calculate the total height for all lines of text
         line_height = draw.textbbox((0, 0), "A", font=fnt)[3]  # Height of a single line
         total_height = line_height * len(lines) + 40  # Add some padding
         image_size = (video_clip.size[0], total_height)
-
+        
         # Create the image with the caption text and background
         caption_image = Image.new('RGBA', image_size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(caption_image)
-
+        
         # Calculate the width of the longest line for the background rectangle
         max_text_width = max(draw.textbbox((0, 0), line, font=fnt)[2] for line in lines)
         padding = 20  # Padding around the text
         rectangle_width = max_text_width + 2 * padding
         rectangle_height = total_height
-
+        
         # Draw the white rounded rectangle as background
         draw.rounded_rectangle(
             ((image_size[0] - rectangle_width) / 2, 0, (image_size[0] + rectangle_width) / 2, rectangle_height),
             fill="white", radius=15
         )
-
+        
         # Draw each line of the caption, centered horizontally
         y_offset = 20  # Start with some padding from the top
         for line in lines:
@@ -167,28 +173,84 @@ class VideoGenerator:
             w = bbox[2] - bbox[0]
             draw.text(((image_size[0] - w) / 2, y_offset), line, font=fnt, fill="black")
             y_offset += line_height  # Move the position down for the next line
-
+        
         # Save caption image as a temporary file
         caption_filename = os.path.join(output_dir, f"caption_{id(caption_text)}.png")
         caption_image.save(caption_filename)
-
+        
         # Create a MoviePy ImageClip for the caption
         caption_clip = ImageClip(caption_filename).set_duration(video_clip.duration)
-
+        
         # Calculate Y-position to move the caption higher (e.g., 20% from the top)
         video_height = video_clip.size[1]
         y_position = video_height * 0.1  # Set the Y-position to be 20% from the top
-
+        
         # Set the custom position
         caption_clip = caption_clip.set_pos(("center", y_position))  # Centered horizontally, 20% from top
-
-        # Overlay the caption on the video
-        final_clip = CompositeVideoClip([video_clip, caption_clip])
-
+        
+        # Add emoji clips if emojis were extracted
+        emoji_clips = []
+        if emojis:
+            emoji_clips = self.add_emoji_clips(video_clip.size, caption_clip.size, max_text_width, emojis)
+        
+        # Create a list of clips to be composited, starting with the video and caption
+        composite_clips = [video_clip, caption_clip]
+        
+        # Add the emoji clips if they exist
+        if emoji_clips:
+            composite_clips.extend(emoji_clips)
+        
+        # Overlay the caption and emojis on the video
+        final_clip = CompositeVideoClip(composite_clips)
+        
         # Remove the temporary caption image
         os.remove(caption_filename)
-
+        
         return final_clip
+
+
+
+    def add_emoji_clips(self, video_size, caption_size, caption_width, emojis):
+        """Create ImageClips for emojis and position them next to the caption."""
+        W, H = video_size  # Video dimensions
+        emoji_clips = []
+        emoji_size = 40  # Adjust size of the emojis
+
+        # Position emojis right after the caption text's width
+        emoji_pos_x = (W / 2) - 100  # Start just outside the right edge of the caption text
+        emoji_pos_y = int(H * 0.20)  # Centered vertically along with caption
+
+        for emoji in emojis:
+            emoji_path = r"C:/Users/hecto/Desktop/ClipFarmer/application/laugh.png"  # Path to emoji images
+            if os.path.exists(emoji_path):
+                # Create emoji clip and resize
+                emoji_image_clip = ImageClip(emoji_path).set_duration(self.clip_duration).resize(width=emoji_size)
+                emoji_image_clip = emoji_image_clip.set_position((emoji_pos_x, emoji_pos_y))
+
+                # Move the next emoji further right
+                emoji_pos_x += emoji_size + 10  # Space between emojis
+                emoji_clips.append(emoji_image_clip)
+            else:
+                print(f"Emoji image not found: {emoji_path}")
+
+        return emoji_clips
+
+
+
+    def extract_emojis_from_caption(self):
+        """Extract emojis from the caption text and return the updated caption without emojis."""
+        caption_text = self.modifications["caption"]
+        emojis = []
+        new_caption = ""
+
+        for char in caption_text:
+            if ord(char) > 10000:  # Approximate range for emoji characters
+                emojis.append(char)  # Store the emoji
+            else:
+                new_caption += char  # Keep non-emoji characters in the caption
+
+        return emojis, new_caption  # Return both the emojis and the updated caption without emojis
+        
 
 
     def download_video(self, url, filename):

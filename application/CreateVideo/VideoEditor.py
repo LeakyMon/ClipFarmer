@@ -167,14 +167,34 @@ class CreateVideoPage(ctk.CTkFrame):
         self.submit_button = ctk.CTkButton(self.submit_frame, text="Submit", fg_color="blue",
                                  command=self.submit)
         
-        self.submit_button.grid(row=8, column=0, pady=10, padx=20, sticky="w")
+        self.submit_button.grid(row=9, column=0, pady=10, padx=20, sticky="w")
 
+        self.emoji_button = ctk.CTkButton(self.submit_frame, text="Add Emoji", fg_color="yellow",
+                                 command=self.add_emoji())
+        
+        self.emoji_button.grid(row=8, column=0, pady=10, padx=20, sticky="w")
 
         self.undo_button = ctk.CTkButton(self.submit_frame, text="Undo", fg_color="orange",
                                  command=self.undo_last_video)
         
         self.undo_button.grid(row=7, column=0, pady=10, padx=20, sticky="w")
         #self.undo_button.pack_forget()  # Hide the undo button initially
+
+    def add_emoji(self):
+        print("adding emoji")
+        emoji_window = tk.Toplevel(self)
+        emoji_window.title("Select Emoji")
+        self.modifications["emoji"] = True
+        emojis = ["😂", "😊", "👍", "🔥", "❤️", "🎉", "😎"]
+        for emoji in emojis:
+            emoji_button = ctk.CTkButton(emoji_window, text=emoji, command=lambda e=emoji: self.add_emoji_to_caption(e))
+            emoji_button.pack(pady=5, padx=10)
+
+    def add_emoji_to_caption(self, emoji):
+        """Adds the selected emoji to the caption entry."""
+        current_caption = self.caption_var.get()
+        self.caption_var.delete(0, tk.END)
+        self.caption_var.insert(0, current_caption + emoji)
 
     def update_modifications(self):
     # Check if the title is provided
@@ -197,6 +217,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
         self.modifications["title"] = self.title_entry.get()
         self.modifications["letterbox"] = self.letterbox_var.get()
+
         # Check if there's a second video
         if self.first_video_data is None and self.second_video_data is None:
             print("Select a video")
@@ -212,8 +233,27 @@ class CreateVideoPage(ctk.CTkFrame):
         return True
 
     def fetch_videos_from_folder(self, folder_name):
-        """Fetches videos from the folder by querying Firestore."""
-        return get_videos_from_folder(folder_name)
+        """Fetches videos from a local folder (or returns a hard-coded video for 'Overlay')."""
+
+        video_list = []
+
+        if folder_name == "Overlay":
+            # Hardcoded video and thumbnail for the "Overlay" folder
+            video_list.append({
+                'title': 'WorldOfTshirts',
+                'thumbnail': 'https://firebasestorage.googleapis.com/v0/b/clipfarmer-f8a79.appspot.com/o/Overlay%2Fthumbnails%2FWorldOfTshirts.mp4_thumbnail.jpg?alt=media&token=5f427b45-ce7a-40fc-b6b9-4ecf51f564dc',
+                'url': 'https://firebasestorage.googleapis.com/v0/b/clipfarmer-f8a79.appspot.com/o/Overlay%2Fvideos%2FWorldOfTshirts.mp4?alt=media&token=997f3735-a151-457a-8863-098f046c4c95'
+            })
+        
+        return video_list
+
+
+    """
+
+    def fetch_videos_from_folder(self, folder_name):
+        
+        #return get_videos_from_folder(folder_name)
+    """
 
     def create_folder_view(self):
         """Restores the folder view."""
@@ -336,7 +376,8 @@ class CreateVideoPage(ctk.CTkFrame):
             "length": 0,
             "title": '',
             "single_video": False,
-            "letterbox":False
+            "letterbox":False,
+            "emoji":False
         }
 
         # Reset the canvas (remove displayed videos)
