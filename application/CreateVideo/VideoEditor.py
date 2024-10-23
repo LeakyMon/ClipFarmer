@@ -313,20 +313,38 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def reset(self):
         print("Resetting")
+        
+        # Reset video data and thumbnails
         self.first_video_data = None
         self.second_video_data = None
         self.first_thumbnail = None
         self.second_thumbnail = None
-
+        
+        # Reset modifications dictionary
         self.modifications = {
             "subtitles_top": False,
             "subtitles_second_clip": False,
             "audio_top": False,
             "audio_second_clip": False,
             "caption": '',
-            "duration":'',
-            "length":0,
-            "title":'',
+            "duration": '',
+            "length": 0,
+            "title": '',
             "single_video": False
         }
+
+        # Reset the canvas (remove displayed videos)
         self.video_canvas.delete("all")
+        
+        # Reset switches to their default values (False or unchecked)
+        self.subtitle_var1.set(False)  # Reset the "Subtitles Top" switch
+        self.subtitle_var2.set(False)  # Reset the "Subtitles Bottom" switch
+        self.audio_var_top.set(False)  # Reset the "Top Audio" switch
+        self.audio_var_bottom.set(False)  # Reset the "Bottom Audio" switch
+
+        # Clear text input fields
+        self.caption_var.delete(0, tk.END)  # Clear the caption entry
+        self.duration_entry.delete(0, tk.END)  # Clear the duration entry
+        self.length_entry.delete(0, tk.END)  # Clear the length entry
+        self.title_entry.delete(0, tk.END)  # Clear the title entry
+

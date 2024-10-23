@@ -320,7 +320,6 @@ class VideoGenerator:
             os.path.join(output_dir, "combined_output.mp4"),
             os.path.join(output_dir, "first_video.mp4"),
             os.path.join(output_dir, "second_video.mp4"),
-
         ]
 
         for file in temp_files:
