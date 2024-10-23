@@ -8,6 +8,8 @@ from .VideoGenerator import VideoGenerator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import get_videos_from_folder  # Import function to fetch videos
 
+### --- BOTTOM AUDIO IS SECOND CLIP --- ###
+
 
 class CreateVideoPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -22,9 +24,9 @@ class CreateVideoPage(ctk.CTkFrame):
 
         self.modifications = {
             "subtitles_top": True,
-            "subtitles_bottom": False,
+            "subtitles_second_clip": False,
             "audio_top": False,
-            "audio_bottom": False,
+            "audio_second_clip": False,
             "caption": '',
             "duration":'',
             "length":0,
@@ -182,9 +184,9 @@ class CreateVideoPage(ctk.CTkFrame):
 
         # Proceed with updating the modifications if all checks pass
         self.modifications["subtitles_top"] = self.subtitle_var1.get()
-        self.modifications["subtitles_bottom"] = self.subtitle_var2.get()
+        self.modifications["subtitles_second_clip"] = self.subtitle_var2.get()
         self.modifications["audio_top"] = self.audio_var_top.get()
-        self.modifications["audio_bottom"] = self.audio_var_bottom.get()
+        self.modifications["audio_second_clip"] = self.audio_var_bottom.get()
         self.modifications["caption"] = self.caption_var.get()
         self.modifications["duration"] = self.duration_entry.get()  # Will be empty if not provided
         self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
