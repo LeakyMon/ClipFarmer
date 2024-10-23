@@ -2,6 +2,7 @@ import customtkinter
 import os
 from PIL import Image
 from CreateVideo.VideoEditor import CreateVideoPage
+from UploadVideo.Upload import UploadFrame  # Importing the new UploadFrame
 
 
 class App(customtkinter.CTk):
@@ -15,7 +16,7 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-            # load images with light and dark mode image
+        # load images with light and dark mode image
         image_path = os.path.join("..", "CustomTkinter", "examples", "test_images")
         self.logo_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "CustomTkinter_logo_single.png")), size=(26, 26))
         self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "large_test_image.png")), size=(500, 150))
@@ -41,16 +42,15 @@ class App(customtkinter.CTk):
                                                    image=self.home_image, anchor="w", command=self.home_button_event)
         self.home_button.grid(row=1, column=0, sticky="ew")
 
-        self.frame_2_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Frame 2",
+        self.frame_2_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Create Video",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                       image=self.create_video_img, anchor="w", command=self.frame_2_button_event)
         self.frame_2_button.grid(row=2, column=0, sticky="ew")
-        """
-        self.frame_3_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Frame 3",
+
+        self.frame_3_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Upload",
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                       image=self.add_user_image, anchor="w", command=self.frame_3_button_event)
         self.frame_3_button.grid(row=3, column=0, sticky="ew")
-        """
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
@@ -67,17 +67,14 @@ class App(customtkinter.CTk):
         self.home_frame_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.home_frame_button_2 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="right")
         self.home_frame_button_2.grid(row=2, column=0, padx=20, pady=10)
-        #self.home_frame_button_3 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="top")
-        #self.home_frame_button_3.grid(row=3, column=0, padx=20, pady=10)
         self.home_frame_button_4 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="bottom", anchor="w")
         self.home_frame_button_4.grid(row=4, column=0, padx=20, pady=10)
 
         # create second frame
-# create second frame
         self.second_frame = CreateVideoPage(self, controller=self)
 
         # create third frame
-        #self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.third_frame = UploadFrame(self, controller=self)
 
         # select default frame
         self.select_frame_by_name("home")
@@ -85,31 +82,31 @@ class App(customtkinter.CTk):
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
-        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
-        #self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "frame_3" else "transparent")
+        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "Create Video" else "transparent")
+        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Upload" else "transparent")
 
         # show selected frame
         if name == "home":
             self.home_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.home_frame.grid_forget()
-        if name == "frame_2":
+        if name == "Create Video":
             self.second_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.second_frame.grid_forget()
-        #if name == "frame_3":
-        #    self.third_frame.grid(row=0, column=1, sticky="nsew")
-        #else:
-        #    self.third_frame.grid_forget()
+        if name == "Upload":
+            self.third_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.third_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
 
     def frame_2_button_event(self):
-        self.select_frame_by_name("frame_2")
+        self.select_frame_by_name("Create Video")
 
-    #def frame_3_button_event(self):
-    #    self.select_frame_by_name("frame_3")
+    def frame_3_button_event(self):
+        self.select_frame_by_name("Upload")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -118,4 +115,3 @@ class App(customtkinter.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-

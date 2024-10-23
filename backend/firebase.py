@@ -1,8 +1,9 @@
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
+import os
 
-# Path to your Firebase credentials JSON file
-cred = credentials.Certificate("firebase_credentials.json")
+# Path to your Firebase credentials JSON file (relative to the current file)
+cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "../firebase_credentials.json"))
 
 # Initialize the Firebase Admin SDK
 firebase_admin.initialize_app(cred, {
@@ -39,19 +40,3 @@ def add_video_metadata(title, video_url, thumbnail_url, folder_type):
     # Add the document to Firestore
     db.collection('videos').document(video_id).set(video_data)
     print(f"Metadata for '{title}' saved in Firestore with ID: {video_id}")
-
-# Example usage
-if __name__ == "__main__":
-    folder_type = "background"  # Could be "overlay" or "background"
-    
-    # Upload video and thumbnail to proper folders
-    video_url = upload_file_to_storage("path/to/your/video.mp4", "sample_video.mp4", folder_type, "videos")
-    thumbnail_url = upload_file_to_storage("path/to/your/thumbnail.jpg", "sample_thumbnail.jpg", folder_type, "thumbnails")
-    
-    # Save metadata
-    add_video_metadata(
-        title="Sample Video",
-        video_url=video_url,
-        thumbnail_url=thumbnail_url,
-        folder_type=folder_type
-    )
