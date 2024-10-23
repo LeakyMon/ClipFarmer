@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import os
 import requests
 import sys
+from .VideoGenerator import VideoGenerator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import get_videos_from_folder  # Import function to fetch videos
 
@@ -20,12 +21,14 @@ class CreateVideoPage(ctk.CTkFrame):
         self.second_thumbnail = None
 
         self.modifications = {
-            "subtitles": True,
-            "caption": False,
-            "subclips": False,
-            "music": False,
-            "upload_to_yt": False,
-            "save_copy": False,
+            "subtitles_top": True,
+            "subtitles_bottom": False,
+            "audio_top": False,
+            "audio_bottom": False,
+            "caption": '',
+            "duration":'',
+            "length":0,
+            "title":'',
             "single_video": False
         }
 
@@ -45,6 +48,12 @@ class CreateVideoPage(ctk.CTkFrame):
         # Define the modifications frame
         self.modifications_frame = ctk.CTkFrame(self.main_frame)
         self.modifications_frame.grid(row=0, column=2, padx=20, pady=20, sticky="n")
+
+        self.submit_frame = ctk.CTkFrame(self.main_frame)
+        self.submit_frame.grid(row=0, column=8, padx=20, pady=20,sticky="w")
+
+        #self.submit_button = ctk.CTkButton(self.submit_frame)
+        #self.submit_button.pack( fill="both", expand=True, padx=10, pady=10)
 
 
         image_path = os.path.join("..", "images", "folder.jpg")
@@ -119,16 +128,81 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def create_mods(self):
         # Add the subtitle switch to the modifications frame
-        self.switch_var1 = ctk.BooleanVar(value=False)
-        self.switch1 = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles", variable=self.switch_var1)
-        self.switch1.grid(row=0, column=0, pady=10, padx=20, sticky="w")
+        self.subtitle_var1 = ctk.BooleanVar(value=False)
+        self.subtitle_var_top = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Top", variable=self.subtitle_var1)
+        self.subtitle_var_top.grid(row=0, column=0, pady=10, padx=20, sticky="w")
+
+        self.subtitle_var2 = ctk.BooleanVar(value=False)
+        self.subtitle_var_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Subtitles Bottom", variable=self.subtitle_var2)
+        self.subtitle_var_bottom.grid(row=1, column=0, pady=10, padx=20, sticky="w")
+
+        self.audio_var_top = ctk.BooleanVar(value=False)
+        self.audio_top = ctk.CTkSwitch(master=self.modifications_frame, text="Top Audio", variable=self.audio_var_top)
+        self.audio_top.grid(row=2, column=0, pady=10, padx=20, sticky="w")
+
+        self.audio_var_bottom = ctk.BooleanVar(value=False)
+        self.audio_bottom = ctk.CTkSwitch(master=self.modifications_frame, text="Bottom Audio", variable=self.audio_var_bottom)
+        self.audio_bottom.grid(row=3, column=0, pady=10, padx=20, sticky="w")
+
+        self.caption_var = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Caption")
+        self.caption_var.grid(row=4, column=0, pady=10, padx=20, sticky="w")
+
+        self.duration_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Duration")
+        self.duration_entry.grid(row=5, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
+
+        self.length_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Length")
+        self.length_entry.grid(row=6, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
+
+        self.title_entry = ctk.CTkEntry(self.modifications_frame, placeholder_text="Enter Title")
+        self.title_entry.grid(row=7, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
 
 
-        self.undo_button = ctk.CTkButton(self.modifications_frame, text="Undo", fg_color="orange",
+        self.submit_button = ctk.CTkButton(self.submit_frame, text="Submit", fg_color="blue",
+                                 command=self.submit)
+        
+        self.submit_button.grid(row=8, column=0, pady=10, padx=20, sticky="w")
+
+
+        self.undo_button = ctk.CTkButton(self.submit_frame, text="Undo", fg_color="orange",
                                  command=self.undo_last_video)
         
-        self.undo_button.grid(row=1, column=0, pady=10, padx=20, sticky="w")
+        self.undo_button.grid(row=7, column=0, pady=10, padx=20, sticky="w")
         #self.undo_button.pack_forget()  # Hide the undo button initially
+
+    def update_modifications(self):
+    # Check if the title is provided
+        if not self.title_entry.get():
+            print("Add title")
+            return False  # Stop further execution if the title is missing
+
+        # Check if both length and duration are missing
+        if not self.duration_entry.get() and not self.length_entry.get():
+            print("Add length or duration")
+            return False # Stop further execution if both are missing
+
+        # Proceed with updating the modifications if all checks pass
+        self.modifications["subtitles_top"] = self.subtitle_var1.get()
+        self.modifications["subtitles_bottom"] = self.subtitle_var2.get()
+        self.modifications["audio_top"] = self.audio_var_top.get()
+        self.modifications["audio_bottom"] = self.audio_var_bottom.get()
+        self.modifications["caption"] = self.caption_var.get()
+        self.modifications["duration"] = self.duration_entry.get()  # Will be empty if not provided
+        self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
+        self.modifications["title"] = self.title_entry.get()
+        
+        # Check if there's a second video
+        if self.first_video_data is None and self.second_video_data is None:
+            print("Select a video")
+            return False
+        elif self.second_video_data is None:
+            print("One video", self.first_video_data)
+            self.modifications["single_video"] = True
+        else:
+            print("TWo video", self.first_video_data, self.second_video_data)
+            self.modifications["single_video"] = False
+
+        print(self.modifications)
+        return True
 
     def fetch_videos_from_folder(self, folder_name):
         """Fetches videos from the folder by querying Firestore."""
@@ -154,12 +228,15 @@ class CreateVideoPage(ctk.CTkFrame):
 
         if self.first_video_data is None:
             # Set as first video
+            print("Selected first video", video)
             self.first_video_data = video
             self.first_thumbnail = ImageTk.PhotoImage(thumbnail_image.resize((270, 480)))  # Full canvas size initially
             self.display_on_canvas()
 
         elif self.second_video_data is None:
             # Set as second video
+            print("Selected second video", video)
+
             self.second_video_data = video
             self.second_thumbnail = ImageTk.PhotoImage(thumbnail_resized)
             self.display_on_canvas(split=True)  # Now split the canvas when second video is added
@@ -167,8 +244,6 @@ class CreateVideoPage(ctk.CTkFrame):
         # Show the Undo button since we have at least one video
         #self.undo_button.grid(row=0,col=2,))
         self.create_folder_view()
-
-
 
     def display_on_canvas(self, split=False):
         """Displays the selected video thumbnails on the canvas."""
@@ -185,6 +260,21 @@ class CreateVideoPage(ctk.CTkFrame):
             if self.first_thumbnail:
                 self.video_canvas.create_image(0, 0, anchor="nw", image=self.first_thumbnail)
 
+    def submit(self):
+        print("submitting with current mods")
+        complete = self.update_modifications()
+        if complete:
+            video_generator = VideoGenerator(
+            modifications=self.modifications,        # Pass modifications dictionary
+            first_video_data=self.first_video_data,  # Pass the first selected video data
+            second_video_data=self.second_video_data # Pass the second selected video data (or None if single video)
+            )
+        
+        # After the video generation process is completed
+            print(f"Video generated and saved to: {video_generator.filepath}")
+        else:
+            return
+        ### --- HERE IS WHERE WE NEED TO RENDER THE VIDEO ACCORDING TO THE MODIFICATIONS --- ###
 
     def undo_last_video(self):
         """Removes the last added video. If both videos are selected, remove the second; else remove the first."""

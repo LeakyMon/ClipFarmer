@@ -62,7 +62,8 @@ def get_videos_from_folder(folder_type):
         video_list.append({
             'id': video_data.get('id'),
             'title': video_data.get('title'),
-            'thumbnail': video_data.get('thumbnail')
+            'thumbnail': video_data.get('thumbnail'),
+            'url': video_data.get('url')
         })
     return video_list
 

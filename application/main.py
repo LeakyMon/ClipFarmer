@@ -4,7 +4,7 @@ from PIL import Image
 from CreateVideo.VideoEditor import CreateVideoPage
 from UploadVideo.Upload import UploadFrame
 from Library.Library import LibraryFrame  # Importing the new LibraryFrame
-
+from CreateVideo.VideoGenerator import VideoGenerator
 
 class App(customtkinter.CTk):
     def __init__(self):
