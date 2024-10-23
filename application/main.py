@@ -7,6 +7,10 @@ from Library.Library import LibraryFrame
 from VideoPlayer.VideoPlayer import VideoPlayerFrame
 from HomeFrame.HomeFrame import HomeFrame  # Import the new HomeFrame class
 from WebUpload.WebUpload import UploadToWeb
+from Database.Database import ModifyDatabase
+from backend.firebase import (
+    list_folders_in_bucket,get_videos_from_folder
+)
 
 
 class App(customtkinter.CTk):
@@ -36,7 +40,7 @@ class App(customtkinter.CTk):
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(7, weight=1)
+        self.navigation_frame.grid_rowconfigure(8, weight=1)
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Image Example", image=self.logo_image,
                                                              compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -72,13 +76,18 @@ class App(customtkinter.CTk):
                                                         image=self.add_user_image, anchor="w", command=self.upload_to_web_button_event)
         self.upload_to_web_button.grid(row=6, column=0, sticky="ew")
 
+        self.modify_database_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Database",
+                                                        fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                                        image=self.add_user_image, anchor="w", command=self.modify_database_button_event)
+        self.modify_database_button.grid(row=7, column=0, sticky="ew")
+
 
         self.vertical_separator = customtkinter.CTkFrame(self.navigation_frame, width=2, fg_color="white")
-        self.vertical_separator.grid(row=0, column=1, rowspan=8, sticky="ns")  # Span all rows vertically
+        self.vertical_separator.grid(row=0, column=1, rowspan=9, sticky="ns")  # Span all rows vertically
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
-        self.appearance_mode_menu.grid(row=7, column=0, padx=20, pady=20, sticky="s")
+        self.appearance_mode_menu.grid(row=8, column=0, padx=20, pady=20, sticky="s")
 
         # Create the new home frame (replace old home frame)
         self.home_frame = HomeFrame(self, controller=self)
@@ -97,9 +106,41 @@ class App(customtkinter.CTk):
 
         self.upload_to_web_frame = UploadToWeb(self, controller=self)
 
+        self.database_frame = ModifyDatabase(self, controller=self)
+
+        self.folders = []
+        self.videos = []
+        self.songs = []
+        self.thumbnails = []
+
+        self.load_data()
 
         # select default frame
         self.select_frame_by_name("home")
+
+    def load_data(self):
+        folder_list = list_folders_in_bucket()  # Fetch the folders list
+        self.thumbnails = []  # Initialize the list for thumbnails
+        
+        for folder in folder_list:
+            self.folders.append(folder)
+            if folder != "Music":
+                videos_in_folder = get_videos_from_folder(folder)
+                self.videos += videos_in_folder
+                # Append the thumbnail for each video
+                for video in videos_in_folder:
+                    self.thumbnails.append(video['thumbnail'])
+            else:
+                self.songs += get_videos_from_folder(folder)
+        """
+        print("Folders:", self.folders)
+        print("Videos:", self.videos)
+        print("Songs:", self.songs)
+        print("Thumbnails:", self.thumbnails)  # Print to verify thumbnail retrieval
+        """
+
+
+        
 
     def select_frame_by_name(self, name):
         # set button color for selected button
@@ -109,7 +150,7 @@ class App(customtkinter.CTk):
         self.library_button.configure(fg_color=("gray75", "gray25") if name == "Library" else "transparent")
         self.videoplayer_button.configure(fg_color=("gray75", "gray25") if name == "Video Player" else "transparent")
         self.upload_to_web_button.configure(fg_color=("gray75", "gray25") if name == "Web Upload" else "transparent")
-
+        self.modify_database_button.configure(fg_color=("gray75", "gray25") if name == "Database" else "transparent")
         # show selected frame
         # Replace the use of pack for home_frame with grid
         if name == "home":
@@ -137,6 +178,10 @@ class App(customtkinter.CTk):
             self.upload_to_web_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.upload_to_web_frame.grid_forget()
+        if name == "Database":
+            self.database_frame.grid(row=0,column=1, sticky="nsew")
+        else:
+            self.database_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
@@ -155,6 +200,9 @@ class App(customtkinter.CTk):
 
     def upload_to_web_button_event(self):
         self.select_frame_by_name("Web Upload")
+
+    def modify_database_button_event(self):
+        self.select_frame_by_name("Database")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)

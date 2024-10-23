@@ -1,1 +1,4 @@
 # If its a solo clip and the lettering is turned on, the audio messes up.
+
+
+#TIk tok uploader git hub https://github.com/makiisthenes/TiktokAutoUploader/blob/main/config.txt

@@ -9,7 +9,7 @@ import ffmpeg
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import Firebase functions
-from backend.firebase import upload_file_to_storage, add_video_metadata, check_if_title_exists
+from backend.firebase import upload_file_to_storage, add_video_metadata, check_if_title_exists, get_video_duration
 
 class UploadFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -80,9 +80,9 @@ class UploadFrame(ctk.CTkFrame):
 
         # Generate a thumbnail
         thumbnail_path = self.generate_thumbnail(video_path)
-
+        duration = get_video_duration(video_path)
         # Upload Video and Thumbnail to Firebase Storage
-        self.upload_to_firebase(title, folder, video_path, thumbnail_path)
+        self.upload_to_firebase(title, folder, video_path, thumbnail_path,duration)
 
     def generate_thumbnail(self, video_path):
         """Generates a thumbnail for the video and returns the file path."""
@@ -115,7 +115,7 @@ class UploadFrame(ctk.CTkFrame):
             print(f"Error generating thumbnail: {e}")
             return None
 
-    def upload_to_firebase(self, title, folder, video_path, thumbnail_path):
+    def upload_to_firebase(self, title, folder, video_path, thumbnail_path,duration):
         """Uploads video and thumbnail to Firebase Storage and saves metadata to Firestore."""
         try:
             # Upload the video to Firebase Storage
@@ -131,7 +131,7 @@ class UploadFrame(ctk.CTkFrame):
                 thumbnail_url = "default_thumbnail_url"  # Set a default thumbnail URL if needed
 
             # Save metadata to Firestore
-            add_video_metadata(title, video_url, thumbnail_url, folder)
+            add_video_metadata(title, video_url, thumbnail_url, folder,duration)
             print(f"Video metadata saved for '{title}'")
 
             # Delete the video file after uploading

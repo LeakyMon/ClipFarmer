@@ -1,0 +1,6 @@
+- Finish tik tok process
+- Make youtube process better
+- Clean up files
+- Add new edits
+- Figure out firebase storage capacity (usage)
+- Eleven labs voice

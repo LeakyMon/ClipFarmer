@@ -10,7 +10,7 @@ import requests
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata  # Import function to fetch videos
+from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata,get_video_duration  # Import function to fetch videos
 # Get the directory where main.py is located
 
 from moviepy.editor import VideoClip, ImageClip, CompositeVideoClip
@@ -55,6 +55,8 @@ class VideoGenerator:
         return self.filepath
     def getThumbnail(self):
         return self.thumbnail
+
+
 
     def get_clip_duration(self):
         """Determine whether to use 'length' or 'duration' based on what's provided."""
@@ -274,48 +276,49 @@ class VideoGenerator:
         """Combine one or two video clips based on the user's selection."""
         target_width = 720
         target_height = 1280
-        original_audio = None
+        original_audio = None  # Initialize original_audio
         print(self.clip_duration, "CLIP DURATION FIRST CLIP")
+
+        # Load the first clip
         first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration)
 
-        # Handle letterbox if enabled
+        # Apply letterbox if enabled
         if self.modifications["letterbox"] == True:
             print("Handling letterbox")
+            if self.modifications["audio_top"]:
+                original_audio = first_clip.audio
             first_clip = self.apply_letterbox(first_clip, target_width, target_height)
 
+        # Load the second clip if provided
         if second_video:
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
-            combined_clip = clips_array([[second_clip], [first_clip]])  # Place second video on top, first on bottom
+            combined_clip = clips_array([[second_clip], [first_clip]])  # Stack second video on top, first on bottom
+        else:
+            combined_clip = first_clip  # Only use the first clip
+
+        # Determine which clip's audio to use based on user input
+        if self.modifications["audio_top"] and self.modifications["letterbox"] == False:  # Extract audio from the first clip
+            print("Extracting audio from the first clip")
+            original_audio = first_clip.audio
+        elif second_video and self.modifications["audio_second_clip"]:  # Extract audio from the second clip
+            print("Extracting audio from the second clip")
             original_audio = second_clip.audio
         else:
-            combined_clip = first_clip
-            original_audio = first_clip.audio  # Single video
-        print("audioFILEPATH", audioFilePath)
-        # Extract the audio from the appropriate clip
-        #original_audio = combined_clip.audio  # Get audio from the combined clip
+            print("No valid audio source selected or available")
 
-        # Only write the audio if it's valid and present
-        if original_audio is not None:
-            combined_clip = combined_clip.set_audio(original_audio)
-        else:
-            print("No audio detected in the video, proceeding without audio.")
+        # Attach the audio to the combined clip if audio was selected
+        #if original_audio is not None:
+        #    combined_clip = combined_clip.set_audio(original_audio)
+        #else:
+         #   print("No audio detected or selected, proceeding without audio.")
 
-        if combined_clip.audio is not None:
-            original_audio = combined_clip.audio
-            #original_audio.write_audiofile(audioFilePath)
-        else:
-            print("No audio detected in the video, proceeding without audio.")
-
-
-        # Write the video with the audio (if present)
-        combined_clip.write_videofile(os.path.join(output_dir, "combined_output.mp4"), audio_codec='aac')
-        #original_audio.write_audiofile(audioFilePath)
-
-
-        self.combinedFilePath = os.path.join(output_dir, "combined_output.mp4")
+        # Save the combined video with or without audio
+        output_filepath = os.path.join(output_dir, "combined_output.mp4")
+        combined_clip.write_videofile(output_filepath, audio_codec='aac')
+        original_audio.write_audiofile(audioFilePath)
+        self.combinedFilePath = output_filepath  # Store the combined file path for future use
 
         return self.combinedFilePath
-
 
     from moviepy.editor import ColorClip
 
@@ -537,7 +540,7 @@ class VideoGenerator:
         try:
             video_url = upload_file_to_storage(filepath, f"{title}.mp4", folder_type, "videos")
             thumbnail_url = upload_file_to_storage(thumbnail, f"{title}_thumbnail.jpg", folder_type, "thumbnails")
-            add_video_metadata(title, video_url, thumbnail_url, folder_type)
+            add_video_metadata(title, video_url, thumbnail_url, folder_type,self.clip_duration)
         except Exception as e:
             print(f"Error uploading to Firebase: {e}")
 
