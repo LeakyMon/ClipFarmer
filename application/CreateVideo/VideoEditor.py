@@ -1,4 +1,6 @@
 import customtkinter as ctk
+from PIL import Image, ImageTk
+import os
 
 class CreateVideoPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -15,10 +17,25 @@ class CreateVideoPage(ctk.CTkFrame):
         # Add a border around the video box (optional)
         self.video_canvas.create_rectangle(2, 2, 268, 478, outline="white", width=2)
 
-        # Bottom section frame (to fit remaining area below the video)
-        self.bottom_section = ctk.CTkFrame(self, fg_color="gray")  # Set the color of the frame
-        self.bottom_section.pack(fill="both", expand=True, padx=20, pady=20)
+        # Scrollable frame for additional controls
+        self.scrollable_frame = ctk.CTkScrollableFrame(self, width=400, height=200)
+        self.scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Add padding to bottom section and more elements if needed
-        self.bottom_label = ctk.CTkLabel(self.bottom_section, text="Additional Controls or Information", font=ctk.CTkFont(size=16))
-        self.bottom_label.pack(pady=10)
+        # Load folder image
+        image_path = os.path.join("..", "images", "folder.jpg")
+        self.folder_image = Image.open(image_path)
+        self.folder_image_resized = self.folder_image.resize((50, 50))  # Resize the folder image to fit the buttons
+        self.folder_photo = ImageTk.PhotoImage(self.folder_image_resized)
+
+        # Create two folders: Background and Overlay
+        self.create_folder_button("Background", self.folder_photo)
+        self.create_folder_button("Overlay", self.folder_photo)
+
+    def create_folder_button(self, name, image):
+        # Create folder button in the scrollable frame
+        folder_button = ctk.CTkButton(self.scrollable_frame, image=image, text=name, compound="left", command=lambda: self.open_folder(name))
+        folder_button.pack(pady=10, padx=10, anchor="w")
+
+    def open_folder(self, folder_name):
+        print(f"Opening {folder_name} folder...")
+        # You can add more functionality here (e.g., show files or open a new frame)
