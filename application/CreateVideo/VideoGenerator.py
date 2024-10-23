@@ -275,6 +275,7 @@ class VideoGenerator:
         target_width = 720
         target_height = 1280
         original_audio = None
+        print(self.clip_duration, "CLIP DURATION FIRST CLIP")
         first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration)
 
         # Handle letterbox if enabled
@@ -301,7 +302,7 @@ class VideoGenerator:
 
         if combined_clip.audio is not None:
             original_audio = combined_clip.audio
-            original_audio.write_audiofile(audioFilePath)
+            #original_audio.write_audiofile(audioFilePath)
         else:
             print("No audio detected in the video, proceeding without audio.")
 
@@ -344,8 +345,9 @@ class VideoGenerator:
         letterbox_clip = ColorClip(size=(target_width, target_height), color=(0, 0, 0))
 
         # Composite the resized video on top of the black background, centered
+        print("CLIP DURATION",clip.duration)
         final_clip = letterbox_clip.set_duration(clip.duration)
-        final_clip = final_clip.set_audio(clip.audio)  # Keep the audio from the original clip
+        #final_clip = final_clip.set_audio(clip.audio)  # Keep the audio from the original clip
         final_clip = CompositeVideoClip([final_clip, resized_clip.set_pos("center")])
 
         return final_clip
@@ -564,3 +566,4 @@ class VideoGenerator:
                     print(f"File not found, skipping: {file}")
             except Exception as e:
                 print(f"Error deleting file {file}: {e}")
+
