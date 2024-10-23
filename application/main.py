@@ -2,7 +2,8 @@ import customtkinter
 import os
 from PIL import Image
 from CreateVideo.VideoEditor import CreateVideoPage
-from UploadVideo.Upload import UploadFrame  # Importing the new UploadFrame
+from UploadVideo.Upload import UploadFrame
+from Library.Library import LibraryFrame  # Importing the new LibraryFrame
 
 
 class App(customtkinter.CTk):
@@ -24,14 +25,14 @@ class App(customtkinter.CTk):
         self.home_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "home_dark.png")),
                                                  dark_image=Image.open(os.path.join(image_path, "home_light.png")), size=(20, 20))
         self.create_video_img = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "chat_dark.png")),
-                                                 dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
+                                                       dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
         self.add_user_image = customtkinter.CTkImage(light_image=Image.open(os.path.join(image_path, "add_user_dark.png")),
                                                      dark_image=Image.open(os.path.join(image_path, "add_user_light.png")), size=(20, 20))
 
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(4, weight=1)
+        self.navigation_frame.grid_rowconfigure(5, weight=1)
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Image Example", image=self.logo_image,
                                                              compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -51,6 +52,12 @@ class App(customtkinter.CTk):
                                                       fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
                                                       image=self.add_user_image, anchor="w", command=self.frame_3_button_event)
         self.frame_3_button.grid(row=3, column=0, sticky="ew")
+
+        # New Library Button
+        self.library_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Library",
+                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                                      image=self.add_user_image, anchor="w", command=self.library_button_event)
+        self.library_button.grid(row=4, column=0, sticky="ew")
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
@@ -76,6 +83,9 @@ class App(customtkinter.CTk):
         # create third frame
         self.third_frame = UploadFrame(self, controller=self)
 
+        # create library frame
+        self.library_frame = LibraryFrame(self, controller=self)
+
         # select default frame
         self.select_frame_by_name("home")
 
@@ -84,6 +94,7 @@ class App(customtkinter.CTk):
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
         self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "Create Video" else "transparent")
         self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Upload" else "transparent")
+        self.library_button.configure(fg_color=("gray75", "gray25") if name == "Library" else "transparent")
 
         # show selected frame
         if name == "home":
@@ -98,6 +109,10 @@ class App(customtkinter.CTk):
             self.third_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.third_frame.grid_forget()
+        if name == "Library":
+            self.library_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.library_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
@@ -107,6 +122,9 @@ class App(customtkinter.CTk):
 
     def frame_3_button_event(self):
         self.select_frame_by_name("Upload")
+
+    def library_button_event(self):
+        self.select_frame_by_name("Library")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)

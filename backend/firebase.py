@@ -2,7 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore, storage
 import os
 
-# Path to your Firebase credentials JSON file (relative to the current file)
+# Path to your Firebase credentials JSON file
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "../firebase_credentials.json"))
 
 # Initialize the Firebase Admin SDK
@@ -40,3 +40,45 @@ def add_video_metadata(title, video_url, thumbnail_url, folder_type):
     # Add the document to Firestore
     db.collection('videos').document(video_id).set(video_data)
     print(f"Metadata for '{title}' saved in Firestore with ID: {video_id}")
+
+def check_if_title_exists(title):
+    """Checks if a video with the given title already exists in Firestore."""
+    videos_ref = db.collection('videos')
+    query = videos_ref.where('title', '==', title).stream()
+
+    for doc in query:
+        return True  # Title already exists
+    return False
+
+def get_videos_from_folder(folder_type):
+    """Fetches videos from a specified folder (Background or Overlay) in Firestore."""
+    videos_ref = db.collection('videos')
+    query = videos_ref.where('folder', '==', folder_type).stream()
+
+    video_list = []
+    for doc in query:
+        video_data = doc.to_dict()
+        video_data['id'] = doc.id  # Include the document ID
+        video_list.append({
+            'id': video_data.get('id'),
+            'title': video_data.get('title'),
+            'thumbnail': video_data.get('thumbnail')
+        })
+    return video_list
+
+
+
+def delete_video_from_firebase(video_id, folder_type, file_name, thumbnail_name):
+    """Deletes a video from both Firestore and Firebase Storage."""
+    # Delete video from Firestore
+    db.collection('videos').document(video_id).delete()
+    print(f"Deleted video metadata from Firestore with ID: {video_id}")
+
+    # Delete video file from Firebase Storage
+    video_blob = bucket.blob(f'{folder_type}/videos/{file_name}')
+    thumbnail_blob = bucket.blob(f'{folder_type}/thumbnails/{thumbnail_name}')
+    
+    video_blob.delete()
+    thumbnail_blob.delete()
+    print(f"Deleted video and thumbnail from Firebase Storage: {file_name} and {thumbnail_name}")
+

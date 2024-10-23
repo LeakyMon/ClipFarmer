@@ -9,12 +9,15 @@ import ffmpeg
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import Firebase functions
-from backend.firebase import upload_file_to_storage, add_video_metadata
+from backend.firebase import upload_file_to_storage, add_video_metadata, check_if_title_exists
 
 class UploadFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
+        self.controller = controller
+        self.create_widgets()
 
+    def create_widgets(self):
         # Title
         self.title_label = ctk.CTkLabel(self, text="Upload Video", font=ctk.CTkFont(size=24, weight="bold"))
         self.title_label.pack(pady=20)
@@ -44,6 +47,13 @@ class UploadFrame(ctk.CTkFrame):
         if title and folder and url:
             print(f"Submitted YouTube URL: {url}")
             print(f"Title: {title}, Folder: {folder}")
+
+            # Check if the title already exists in the database
+            if check_if_title_exists(title):
+                self.clear_widgets()
+                error_label = ctk.CTkLabel(self, text="Error: Title already exists!", font=ctk.CTkFont(size=24, weight="bold"))
+                error_label.pack(pady=50)
+                return
 
             # Download the video
             self.download_video(url, title, folder)
@@ -124,5 +134,24 @@ class UploadFrame(ctk.CTkFrame):
             add_video_metadata(title, video_url, thumbnail_url, folder)
             print(f"Video metadata saved for '{title}'")
 
+            # Delete the video file after uploading
+            if os.path.exists(video_path):
+                os.remove(video_path)
+                print(f"Deleted local video file: {video_path}")
+
+            # Clear widgets and display success message
+            self.clear_widgets()
+            self.display_success_message()
+
         except Exception as e:
             print(f"Error uploading to Firebase: {e}")
+
+    def clear_widgets(self):
+        """Clears all widgets from the current frame."""
+        for widget in self.winfo_children():
+            widget.destroy()
+
+    def display_success_message(self):
+        """Displays a success message after video upload."""
+        success_label = ctk.CTkLabel(self, text="Video Successfully Uploaded!", font=ctk.CTkFont(size=24, weight="bold"))
+        success_label.pack(pady=50)
