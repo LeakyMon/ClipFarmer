@@ -5,7 +5,11 @@ import os
 import requests
 import sys
 from WebUpload.YTUpload.yt import upload_to_youtube  # Import the upload function
+import subprocess
+import cv2
+from tkinter import filedialog
 
+os.environ["IMAGEMAGICK_BINARY"] = "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI/convert.exe"
 class UploadToWeb(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -42,11 +46,25 @@ class UploadToWeb(ctk.CTkFrame):
         self.instagram_button.grid(row=0, column=2, padx=10, pady=10)
         self.x_button.grid(row=0, column=3, padx=10, pady=10)
 
+        # Add the "Open Video" button below the social media icons
+        self.open_button = ctk.CTkButton(self.main_frame, text="Open Video", command=self.open_video_file)
+        self.open_button.grid(row=1, column=0, columnspan=4, padx=10, pady=10)  # Span across all columns
+
         # Frame for upload information fields
         self.info_frame = ctk.CTkFrame(self)
         self.info_frame.pack(pady=20)
 
         self.videoToUpload = None
+
+    def open_video_file(self):
+        """Open a file dialog to choose a video file."""
+        video_file = filedialog.askopenfilename(
+            title="Select Video",
+            filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")]
+        )
+        if video_file:
+            self.videoToUpload = video_file
+            print(f"Selected video: {self.videoToUpload}")
 
     def bringVideoToUpload(self, filename):
         print("here ", filename)
@@ -152,11 +170,36 @@ class UploadToWeb(ctk.CTkFrame):
             privacy_status="unlisted"  # Let the user select privacy status if needed
         )
 
+
     def handle_tiktok_upload(self):
         title = self.tiktok_title_entry.get()
         hashtags = self.tiktok_hashtags_entry.get()
-        print(f"Uploading to TikTok with title: {title}, hashtags: {hashtags}")
-        # Add your TikTok upload logic here
+        video_file = self.videoToUpload  # Assuming this contains the video file path
+
+        # Make sure the video file and title are provided
+        if not video_file or not title:
+            print("Video file and title are required!")
+            return
+
+        # Path to the cookie directory
+        COOKIES_DIR = "C:/Users/hecto/Desktop/ClipFarmer/application/TiktokAutoUploader/CookiesDir"
+        cookie_file = os.path.join(COOKIES_DIR, "tiktok_session-torchomon.cookie")
+
+        # Check if the cookie file exists
+        if not os.path.exists(cookie_file):
+            print(f"No TikTok session cookie found for user torchomon. Please log in first.")
+            return
+
+        print(f"Uploading to TikTok with title: {title} and hashtags: {hashtags}")
+
+        # Call the TikTok uploader script using subprocess
+        subprocess.run([
+            'python', r'C:/Users/hecto/Desktop/ClipFarmer/application/TiktokAutoUploader/cli.py', 'upload',
+            '--user', 'torchomon',
+            '-v', video_file,
+            '-t', title
+        ])
+
 
     def handle_instagram_upload(self):
         caption = self.instagram_caption_entry.get()
