@@ -274,6 +274,7 @@ class CreateVideoPage(ctk.CTkFrame):
         
         # After the video generation process is completed
             print(f"Video generated and saved to: {video_generator.filepath}")
+            self.reset()
         else:
             return
         ### --- HERE IS WHERE WE NEED TO RENDER THE VIDEO ACCORDING TO THE MODIFICATIONS --- ###
@@ -309,3 +310,23 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def open_music_folder(self,name):
         print("POpne")
+
+    def reset(self):
+        print("Resetting")
+        self.first_video_data = None
+        self.second_video_data = None
+        self.first_thumbnail = None
+        self.second_thumbnail = None
+
+        self.modifications = {
+            "subtitles_top": False,
+            "subtitles_second_clip": False,
+            "audio_top": False,
+            "audio_second_clip": False,
+            "caption": '',
+            "duration":'',
+            "length":0,
+            "title":'',
+            "single_video": False
+        }
+        self.video_canvas.delete("all")

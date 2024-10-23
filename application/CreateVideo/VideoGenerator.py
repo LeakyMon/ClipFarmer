@@ -7,7 +7,9 @@ import pysubs2
 from datetime import timedelta
 import json
 import requests
-
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata  # Import function to fetch videos
 # Get the directory where main.py is located
 
 # Setup directories for the project
@@ -162,34 +164,125 @@ class VideoGenerator:
 
 
 
-    def speechToText(self, audio_file):
-        """Convert speech to text and generate subtitles using a template."""
-        audio_path = os.path.join(output_dir, audio_file)
+    def speechToText(self, audioFileName):
+        print("-----STEP 3. Speech to Text-----")
 
-        if not os.path.exists(audio_path):
-            print(f"Audio file not found: {audio_path}")
-            return
-        else:
-            print("AUDIO PATH EXISTS", audio_path)
+        audioFilePath = os.path.join(output_dir, audioFileName)
+        print(f"Audio file path: {audioFilePath}")
 
-        # Transcribe audio to text using AssemblyAI
+        # Transcribe the audio to text using AssemblyAI
         try:
-            transcript = transcriber.transcribe(audio_path)
-            subtitles = transcript.export_subtitles_srt()
+            transcript = transcriber.transcribe(audioFilePath)
+            words = transcript.words
         except Exception as e:
             print(f"Error during transcription: {e}")
             return
 
-        # Create the SRT file with subtitles
-        srt_file_path = os.path.join(output_dir, "subtitles.srt")
-        with open(srt_file_path, 'w') as srt_file:
-            srt_file.write(subtitles)
+        srt_lines = []
+        current_line = []
+        current_start_time = None
+        prev_end_time = 0
+        total = 0
+        min_duration_ms = 850
 
-        # Convert the SRT file to ASS using pysubs2 and save it
-        subs = pysubs2.load(srt_file_path)
-        subs.save(newsubtitle)
+        # Process the transcript words
+        for word in words:
+            start_time = word.start / 1000
+            end_time = word.end / 1000
+            word.text = word.text.upper()
 
-        return newsubtitle
+            # Determine when to start a new subtitle line
+            new_line_conditions = [
+                total + len(word.text) + 1 > 15,  # Word count limit for a subtitle line
+                (start_time - prev_end_time) * 1000 > min_duration_ms,  # Long pause between words
+                word.text.strip().endswith(('.', '?', '!'))  # End of sentence punctuation
+            ]
+
+            if not current_start_time:
+                current_start_time = start_time
+
+            if any(new_line_conditions):
+                if current_line:
+                    start = str(timedelta(seconds=current_start_time))
+                    end = str(timedelta(seconds=prev_end_time))
+                    srt_lines.append((start, end, ' '.join(current_line)))
+                    current_line = []
+                    total = 0
+
+                current_start_time = max(prev_end_time, start_time)
+
+            current_line.append(word.text)
+            total += len(word.text) + 1
+            prev_end_time = end_time
+
+            if word.text.strip().endswith(('.', '?', '!')) and current_line:
+                start = str(timedelta(seconds=current_start_time))
+                end = str(timedelta(seconds=prev_end_time))
+                srt_lines.append((start, end, ' '.join(current_line)))
+                current_line = []
+                total = 0
+                current_start_time = None
+
+        # Add the last line if it exists
+        if current_line:
+            start = str(timedelta(seconds=current_start_time))
+            end = str(timedelta(seconds=prev_end_time))
+            srt_lines.append((start, end, ' '.join(current_line)))
+
+        # Generate the SRT content
+        srt_content = ""
+        for index, (start, end, text) in enumerate(srt_lines, 1):
+            srt_content += f"{index}\n{start} --> {end}\n{text}\n\n"
+
+        srt_file = os.path.join(output_dir, "subtitles.srt")
+        subtitle_fileName = os.path.join(output_dir, "subtitles.ass")  # Always use 'subtitles.ass'
+
+        # Save the SRT file and convert it to ASS using pysubs2
+        with open(srt_file, "w") as f:
+            f.write(srt_content)
+
+        subs = pysubs2.load(srt_file)
+        subs.styles["Default"].alignment = 5  # Set alignment to bottom-center
+
+        subs.save(subtitle_fileName)
+
+        # Apply highlights and animations to the subtitles
+        highlights = [result.text.upper() for result in transcript.auto_highlights.results]
+
+        with open(subtitle_fileName, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        modified_lines = []
+        for line in lines:
+            if line.startswith("Dialogue:"):
+                parts = line.split(',', 9)
+                text = parts[9]
+
+                # Apply highlight color to specified words
+                for highlight in highlights:
+                    if highlight in text:
+                        colored_highlight = f"{{\\c&H00FFFF&}}{highlight}{{\\c}}"
+                        text = text.replace(highlight, colored_highlight)
+
+                # Add animation effects to the text
+                animated_text = (
+                    "{\\fscx20\\fscy20"  # Start from 20% scale
+                    "\\t(0,32,\\fscx120\\fscy120)"  # Quickly scale up to 120%
+                    "\\t(32,16,\\fscx100\\fscy100)"  # Then down to 100%
+                    "\\t(48,112,\\fscx100\\fscy100)}"  # Stay at 100%
+                    + text
+                )
+                parts[9] = animated_text
+                line = ','.join(parts)
+
+            modified_lines.append(line)
+
+        # Write the modified content back to the ASS file (subtitles.ass)
+        with open(subtitle_fileName, 'w', encoding='utf-8') as file:
+            file.writelines(modified_lines)
+
+        return subtitle_fileName  # Return the path to subtitles.ass
+
 
     def add_thumbnail(self, video_path):
         """Generate a thumbnail from the video."""
@@ -201,5 +294,41 @@ class VideoGenerator:
         return output_thumbnail
 
     def add_to_library(self, filepath, thumbnail):
-        """Uploads the generated video and thumbnail to Firebase Storage and adds metadata to Firestore."""
-        pass
+        folder_type = "CreatedVideos"  # Folder where the videos and thumbnails are stored
+        title = self.modifications['title']  # Video title from modifications
+
+        if check_if_title_exists(title):
+            print(f"A video with the title '{title}' already exists in Firestore. Please choose a different title.")
+            return
+
+        try:
+            video_url = upload_file_to_storage(filepath, f"{title}.mp4", folder_type, "videos")
+            thumbnail_url = upload_file_to_storage(thumbnail, f"{title}_thumbnail.jpg", folder_type, "thumbnails")
+            add_video_metadata(title, video_url, thumbnail_url, folder_type)
+        except Exception as e:
+            print(f"Error uploading to Firebase: {e}")
+
+        print(f"Video '{title}' successfully uploaded to Firebase Storage and metadata saved in Firestore.")
+        self.cleanup_temp_files()
+
+    def cleanup_temp_files(self):
+        """Delete all temporary files like .mp4, .wav, .ass, and .srt."""
+        temp_files = [
+            os.path.join(output_dir, "output_audio.wav"),
+            os.path.join(output_dir, "subtitles.ass"),
+            os.path.join(output_dir, "subtitles.srt"),
+            os.path.join(output_dir, "combined_output.mp4"),
+            os.path.join(output_dir, "first_video.mp4"),
+            os.path.join(output_dir, "second_video.mp4"),
+
+        ]
+
+        for file in temp_files:
+            try:
+                if os.path.exists(file):
+                    os.remove(file)
+                    print(f"Deleted temporary file: {file}")
+                else:
+                    print(f"File not found, skipping: {file}")
+            except Exception as e:
+                print(f"Error deleting file {file}: {e}")
