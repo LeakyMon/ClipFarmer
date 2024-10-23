@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 import os
 import cv2
 import pygame
-
+from WebUpload.WebUpload import UploadToWeb
 class VideoPlayerFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -23,12 +23,12 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.title_label = ctk.CTkLabel(self, text="Video Player", font=ctk.CTkFont(size=24, weight="bold"))
         self.title_label.pack(pady=20)
 
-        # Create a frame to display the video
-        self.video_frame = ctk.CTkFrame(self, width=640, height=360, fg_color="black")
+        # Create a frame to display the video (adjusted for 9:16 aspect ratio)
+        self.video_frame = ctk.CTkFrame(self, width=360, height=640, fg_color="black")
         self.video_frame.pack(pady=20)
 
-        # Create a canvas to display the video frames
-        self.video_canvas = ctk.CTkCanvas(self.video_frame, width=640, height=360, bg="black")
+        # Create a canvas to display the video frames (adjusted for 9:16 aspect ratio)
+        self.video_canvas = ctk.CTkCanvas(self.video_frame, width=360, height=640, bg="black")
         self.video_canvas.pack()
 
         # Create a frame for the control buttons (play, pause, etc.)
@@ -45,13 +45,43 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.restart_button = ctk.CTkButton(self.control_frame, text="Restart", command=self.restart_video)
         self.restart_button.grid(row=0, column=2, padx=10)
 
+        # Move the Open Video and Upload Video buttons to a new row (below Play, Pause, Restart)
         self.open_button = ctk.CTkButton(self.control_frame, text="Open Video", command=self.open_video_file)
-        self.open_button.grid(row=0, column=3, padx=10)
+        self.open_button.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
+
+        self.upload_to_web_button = ctk.CTkButton(self.control_frame, text="Upload Video", command=self.upload_video)
+        self.upload_to_web_button.grid(row=1, column=2, columnspan=2, padx=10, pady=5)
 
         # Create a volume slider
         self.volume_slider = ctk.CTkSlider(self, from_=0, to=1, number_of_steps=100, command=self.set_volume)
         self.volume_slider.set(1)  # Set default volume to 100%
         self.volume_slider.pack(pady=10)
+
+    def play_video(self):
+        """Play the video and start audio playback."""
+        if self.cap and self.is_playing:
+            # Play audio if it's not already playing
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.play()  # Play the audio
+
+            ret, frame = self.cap.read()
+            if ret:
+                # Resize the frame to 360x640 for 9:16 ratio display
+                frame = cv2.resize(frame, (360, 640))
+                frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame_image)
+                img_tk = ImageTk.PhotoImage(image=img)
+                self.video_canvas.create_image(0, 0, anchor="nw", image=img_tk)
+                self.video_canvas.image = img_tk  # Keep reference to avoid garbage collection
+
+                # Continue playing after a delay
+                self.after(30, self.play_video)
+            else:
+                self.is_playing = False
+                pygame.mixer.music.stop()  # Stop the audio when the video ends
+
+    # Other functions (open_video_file, load_video, etc.) remain the same
+
 
     def open_video_file(self):
         """Open a file dialog to choose a video file."""
@@ -87,28 +117,6 @@ class VideoPlayerFrame(ctk.CTkFrame):
             pygame.mixer.music.load(self.audio_file)  # Load the extracted audio
             pygame.mixer.music.set_volume(1)  # Set default volume to 100%
 
-    def play_video(self):
-        """Play the video and start audio playback."""
-        if self.cap and self.is_playing:
-            # Play audio if it's not already playing
-            if not pygame.mixer.music.get_busy():
-                pygame.mixer.music.play()  # Play the audio
-
-            ret, frame = self.cap.read()
-            if ret:
-                frame = cv2.resize(frame, (640, 360))
-                frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(frame_image)
-                img_tk = ImageTk.PhotoImage(image=img)
-                self.video_canvas.create_image(0, 0, anchor="nw", image=img_tk)
-                self.video_canvas.image = img_tk  # Keep reference to avoid garbage collection
-
-                # Continue playing after a delay
-                self.after(30, self.play_video)
-            else:
-                self.is_playing = False
-                pygame.mixer.music.stop()  # Stop the audio when the video ends
-
     def pause_video(self):
         """Pause the video and audio playback."""
         self.is_playing = False
@@ -133,3 +141,19 @@ class VideoPlayerFrame(ctk.CTkFrame):
         pygame.mixer.music.stop()  # Stop the audio
         if self.audio_file and os.path.exists(self.audio_file):
             os.remove(self.audio_file)  # Clean up the temporary audio file
+
+    def upload_video(self):
+        """Stop video playback and audio before navigating to the Upload page."""
+        # Stop video playback
+        self.is_playing = False  # Stop the video loop
+        if self.cap:  # Check if the video capture object is active
+            self.cap.release()  # Release the video capture
+        
+        # Stop audio playback
+        if pygame.mixer.music.get_busy():  # Check if music is currently playing
+            pygame.mixer.music.stop()  # Stop the audio playback
+
+        # Proceed to the upload page
+        print("Now we show the Upload To Web page")
+        self.controller.upload_to_web_frame.bringVideoToUpload(self.video_file)
+        self.controller.select_frame_by_name("Web Upload")
