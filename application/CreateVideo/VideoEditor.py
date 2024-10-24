@@ -20,6 +20,9 @@ class CreateVideoPage(ctk.CTkFrame):
         self.second_video_data = None
         self.first_thumbnail = None
         self.second_thumbnail = None
+        self.script_selection = None
+        self.music_selection = None
+        self.script_text = None
 
         self.modifications = {
             "subtitles_top": True,
@@ -31,7 +34,8 @@ class CreateVideoPage(ctk.CTkFrame):
             "length":0,
             "title":'',
             "single_video": False,
-            "letterbox": False
+            "letterbox": False,
+            "script_text": None
         }
         self.emoji = False
         # Title for Create Video page (centered)
@@ -59,6 +63,8 @@ class CreateVideoPage(ctk.CTkFrame):
 
 
         image_path = os.path.join("..", "images", "folder.jpg")
+        self.script_path = os.path.join("..", "images", "script.png")
+
         self.folder_image = Image.open(image_path)
         self.folder_image_resized = self.folder_image.resize((50, 50))  # Resize the folder image to fit the buttons
         self.folder_photo = ImageTk.PhotoImage(self.folder_image_resized)
@@ -84,6 +90,8 @@ class CreateVideoPage(ctk.CTkFrame):
 
         # Add music-related content in the second scrollable frame
         self.create_music_folder_button("Music", self.folder_photo, self.scrollable_frame_music)
+        self.create_scripts_button("Scripts", self.folder_photo, self.scrollable_frame_music)
+
 
         self.create_mods()
 
@@ -91,6 +99,11 @@ class CreateVideoPage(ctk.CTkFrame):
         """Creates a button for each folder."""
         folder_button = ctk.CTkButton(self.scrollable_frame, image=image, text=name, compound="left", command=lambda: self.open_folder(name))
         folder_button.pack(pady=10, padx=10, anchor="w")
+    def create_music_folder_button(self, name, image):
+        """Creates a button for each folder."""
+        folder_button = ctk.CTkButton(self.scrollable_frame_music, image=image, text=name, compound="right", command=lambda: self.open_folder(name))
+        folder_button.pack(pady=10, padx=10, anchor="w")
+    
 
     def open_folder(self, folder_name):
         """Opens the selected folder and displays its videos."""
@@ -98,35 +111,41 @@ class CreateVideoPage(ctk.CTkFrame):
         print(f"Opening {folder_name} folder...")
 
         # Clear current frame content
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+        if folder_name == "Background" or folder_name == "Overlay":
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
 
-        # Fetch video data from Firestore
-        video_data = self.fetch_videos_from_folder(folder_name)
+            # Fetch video data from Firestore
+            video_data = self.fetch_videos_from_folder(folder_name)
 
-        # Display video thumbnails and titles
-        for video in video_data:
-            video_frame = ctk.CTkFrame(self.scrollable_frame)
-            video_frame.pack(pady=10, padx=10, anchor="w")
+            # Display video thumbnails and titles
+            for video in video_data:
+                video_frame = ctk.CTkFrame(self.scrollable_frame)
+                video_frame.pack(pady=10, padx=10, anchor="w")
 
-            # Fetch the thumbnail image from the URL
-            thumbnail_image = Image.open(requests.get(video['thumbnail'], stream=True).raw)
-            thumbnail_resized = thumbnail_image.resize((100, 100))
-            thumbnail = ImageTk.PhotoImage(thumbnail_resized)
+                # Fetch the thumbnail image from the URL
+                thumbnail_image = Image.open(requests.get(video['thumbnail'], stream=True).raw)
+                thumbnail_resized = thumbnail_image.resize((100, 100))
+                thumbnail = ImageTk.PhotoImage(thumbnail_resized)
 
-            thumbnail_label = ctk.CTkLabel(video_frame, image=thumbnail, text="")
-            thumbnail_label.image = thumbnail  # Keep a reference to avoid garbage collection
-            thumbnail_label.grid(row=0, column=0, padx=10)
+                thumbnail_label = ctk.CTkLabel(video_frame, image=thumbnail, text="")
+                thumbnail_label.image = thumbnail  # Keep a reference to avoid garbage collection
+                thumbnail_label.grid(row=0, column=0, padx=10)
 
-            title_label = ctk.CTkLabel(video_frame, text=video['title'], font=("Arial", 14))
-            title_label.grid(row=0, column=1, padx=10)
+                title_label = ctk.CTkLabel(video_frame, text=video['title'], font=("Arial", 14))
+                title_label.grid(row=0, column=1, padx=10)
 
-            select_button = ctk.CTkButton(video_frame, text="Select", command=lambda v=video: self.select_video(v))
-            select_button.grid(row=0, column=2, padx=10)
+                select_button = ctk.CTkButton(video_frame, text="Select", command=lambda v=video: self.select_video(v))
+                select_button.grid(row=0, column=2, padx=10)
 
-        # Add Back Button
-        back_button = ctk.CTkButton(self.scrollable_frame, text="Back", command=self.create_folder_view)
-        back_button.pack(pady=10, padx=10, anchor="w")
+            # Add Back Button
+            back_button = ctk.CTkButton(self.scrollable_frame, text="Back", command=self.create_folder_view)
+            back_button.pack(pady=10, padx=10, anchor="w")
+        elif folder_name == "Scripts":
+            self.open_scripts_folder(folder_name)
+        else:
+            self.open_music_folder
+            
 
     def create_mods(self):
         # Add the subtitle switch to the modifications frame
@@ -163,22 +182,19 @@ class CreateVideoPage(ctk.CTkFrame):
         self.title_entry.grid(row=8, column=0, padx=(20, 0), pady=(10, 10), sticky="w")
 
 
-        self.submit_button = ctk.CTkButton(self.submit_frame, text="Submit", fg_color="blue",
-                                 command=self.submit)
-        
-        self.submit_button.grid(row=9, column=0, pady=10, padx=20, sticky="w")
+        self.script_textbox = ctk.CTkTextbox(self.submit_frame, width=200, height=200)
+        self.script_textbox.grid(row=0, column=0, pady=10, padx=20, sticky="w")
 
-        self.emoji_button = ctk.CTkButton(self.submit_frame, text="Add Emoji", fg_color="blue",
-                                 command=self.add_emoji)
-        
-        self.emoji_button.grid(row=8, column=0, pady=10, padx=20, sticky="w")
+        # Move the buttons to the bottom-right of the frame
+        self.undo_button = ctk.CTkButton(self.submit_frame, text="Undo", fg_color="orange", command=self.undo_last_video)
+        self.undo_button.grid(row=1, column=0, pady=10, padx=20, sticky="w")
 
-        self.undo_button = ctk.CTkButton(self.submit_frame, text="Undo", fg_color="orange",
-                                 command=self.undo_last_video)
-        
-        self.undo_button.grid(row=7, column=0, pady=10, padx=20, sticky="w")
-        #self.undo_button.pack_forget()  # Hide the undo button initially
+        self.emoji_button = ctk.CTkButton(self.submit_frame, text="Add Emoji", fg_color="blue", command=self.add_emoji)
+        self.emoji_button.grid(row=2, column=0, pady=10, padx=20, sticky="w")
 
+        self.submit_button = ctk.CTkButton(self.submit_frame, text="Submit", fg_color="blue", command=self.submit)
+        self.submit_button.grid(row=3, column=0, pady=10, padx=20, sticky="w")
+        
     def add_emoji(self):
         print("adding emoji")
         self.emoji = True
@@ -218,6 +234,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
         self.modifications["title"] = self.title_entry.get()
         self.modifications["letterbox"] = self.letterbox_var.get()
+        self.modifications["script_text"] = self.script_textbox.get()
 
         # Check if there's a second video
         if self.first_video_data is None and self.second_video_data is None:
@@ -236,6 +253,8 @@ class CreateVideoPage(ctk.CTkFrame):
     def fetch_videos_from_folder(self, folder_name):
         """Fetches videos from a local folder (or returns a hard-coded video for 'Overlay')."""
 
+        return get_videos_from_folder(folder_name)
+    """
         video_list = []
 
         if folder_name == "Overlay":
@@ -256,9 +275,10 @@ class CreateVideoPage(ctk.CTkFrame):
 
     """
 
+    """
     def fetch_videos_from_folder(self, folder_name):
         
-        #return get_videos_from_folder(folder_name)
+        
     """
 
     def create_folder_view(self):
@@ -270,6 +290,15 @@ class CreateVideoPage(ctk.CTkFrame):
         # Create folder buttons again
         self.create_folder_button("Background", self.folder_photo)
         self.create_folder_button("Overlay", self.folder_photo)
+    def create_music_view(self):
+        """Restores the folder view."""
+        # Clear current frame content
+        for widget in self.scrollable_frame_music.winfo_children():
+            widget.destroy()
+
+        # Create folder buttons again
+        self.create_music_folder_button("Music", self.folder_photo, self.scrollable_frame_music)
+        self.create_scripts_button("Script", self.folder_photo,self.scrollable_frame_music)
 
     def select_video(self, video):
         """When a video is selected, display it on the canvas."""
@@ -361,9 +390,57 @@ class CreateVideoPage(ctk.CTkFrame):
         music_button = ctk.CTkButton(frame, image=image, text=name, compound="left", command=lambda: self.open_music_folder(name))
         music_button.pack(pady=10, padx=10, anchor="w")
 
+    def create_scripts_button(self,name,image,frame):
+        music_button = ctk.CTkButton(frame, image=image, text=name, compound="left", command=lambda: self.open_scripts_folder(name))
+        music_button.pack(pady=10, padx=10, anchor="w")
+
+
     def open_music_folder(self,name):
         print("POpne")
+    def open_scripts_folder(self,name):
+        self.current_folder = name
+        print(f"Opening {name} folder...")
 
+        # Clear current frame content
+        for widget in self.scrollable_frame_music.winfo_children():
+            widget.destroy()
+
+        # Fetch video data from Firestore
+        script_data = self.fetch_videos_from_folder(name)
+
+        # Display video thumbnails and titles
+        for script in script_data:
+            script_frame = ctk.CTkFrame(self.scrollable_frame_music)
+            script_frame.pack(pady=10, padx=10, anchor="w")
+
+            # Fetch the thumbnail image from the URL
+            self.script_image = Image.open(self.script_path)
+            self.script_image_resized = self.script_image.resize((50, 50))  # Resize the folder image to fit the buttons
+            self.script_photo = ImageTk.PhotoImage(self.script_image_resized)
+
+            script_label = ctk.CTkLabel(script_frame, image=self.script_photo, text="")
+            script_label.image = self.script_photo  # Keep a reference to avoid garbage collection
+            script_label.grid(row=0, column=0, padx=10)
+
+            title_label = ctk.CTkLabel(script_frame, text=script['title'], font=("Arial", 14))
+            title_label.grid(row=0, column=1, padx=10)
+
+            select_button = ctk.CTkButton(script_frame, text="Select", command=lambda v=script: self.select_script(v))
+            select_button.grid(row=0, column=2, padx=10)
+
+        # Add Back Button
+        back_button = ctk.CTkButton(self.scrollable_frame_music, text="Back", command=self.create_music_view)
+        back_button.pack(pady=10, padx=10, anchor="w")
+
+    def select_script(self, script):
+        print(f"Selected script: {script['title']}")
+    
+    # Clear any existing text in the textbox
+        self.script_textbox.delete("1.0", tk.END)  # Clear the textbox content
+    
+    # Insert the selected script's text
+        self.script_textbox.insert(tk.END, script['text'])  # Insert the script text into the textbox
+        self.script = script['text']
     def reset(self):
         print("Resetting")
         
@@ -384,7 +461,8 @@ class CreateVideoPage(ctk.CTkFrame):
             "length": 0,
             "title": '',
             "single_video": False,
-            "letterbox":False
+            "letterbox":False,
+            "script_text":None
         }
 
         # Reset the canvas (remove displayed videos)
@@ -401,5 +479,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.duration_entry.delete(0, tk.END)  # Clear the duration entry
         self.length_entry.delete(0, tk.END)  # Clear the length entry
         self.title_entry.delete(0, tk.END)  # Clear the title entry
+        self.script_textbox.delete(0,tk.END)
+        self.script_text = None
         
 

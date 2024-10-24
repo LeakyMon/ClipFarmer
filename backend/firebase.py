@@ -75,10 +75,19 @@ def list_folders_in_bucket():
 
 def get_videos_from_folder(folder_type):
     """Fetches videos from a specified folder (Background, Overlay, CreatedVideos) in Firestore."""
-    videos_ref = db.collection('videos')
+    video_list = []
+
+    videos_ref = None
+    if folder_type == "Scripts":
+        video_list = get_script_metadata()
+        return video_list
+    elif folder_type == "Music":
+        video_list = get_music_metadata()
+        return video_list
+    else:  
+        videos_ref = db.collection('videos')
     query = videos_ref.where('folder', '==', folder_type).stream()
 
-    video_list = []
     for doc in query:
         video_data = doc.to_dict()
         video_data['id'] = doc.id  # Include the document ID
@@ -226,3 +235,37 @@ def get_audio_duration(file_path):
     except Exception as e:
         print(f"Error getting video duration: {e}")
         return None
+    
+    
+def get_script_metadata():
+    script_ref = db.collection('scripts').stream()  # No 'where' filter
+    script_list = []
+    for doc in script_ref:
+        script_data = doc.to_dict()
+        script_data['id'] = doc.id  # Include the document ID
+        script_list.append({
+            'id': script_data.get('id'),
+            'title': script_data.get('title'),
+            'url': script_data.get('url'),
+            'background_audio': script_data.get('background_audio'),
+            'text': script_data.get('text')
+        })
+    
+    return script_list
+
+def get_music_metadata():
+    music_ref = db.collection('music').stream()  # No 'where' filter
+    music_list = []
+    for doc in music_ref:
+        music_data = doc.to_dict()
+        music_data['id'] = doc.id  # Include the document ID
+        music_list.append({
+            'id': music_data.get('id'),
+            'title': music_data.get('title'),
+            'thumbnail': music_data.get('thumbnail'),
+            'url': music_data.get('url'),
+            'category': music_data.get('category'),
+            'duration': music_data.get('duration')
+        })
+    
+    return music_list

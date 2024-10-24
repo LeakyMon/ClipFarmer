@@ -132,7 +132,7 @@ class App(customtkinter.CTk):
         
         for folder in folder_list:
             self.folders.append(folder)
-            if folder != "Music":
+            if folder != "Music" and folder != "Scripts":
                 videos_in_folder = get_videos_from_folder(folder)
                 self.videos += videos_in_folder
                 # Append the thumbnail for each video

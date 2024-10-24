@@ -22,6 +22,9 @@ class RedditScraper(ctk.CTkFrame):
         self.title_label.pack(pady=10)
 
         # Start Button
+        self.subreddit_entry = ctk.CTkEntry(self.main_frame, placeholder_text= "Enter a subreddit")
+        self.subreddit_entry.pack(pady=10)
+        
         self.scrape_button = ctk.CTkButton(self.main_frame, text="Start Scraping", command=self.start_scraping)
         self.scrape_button.pack(pady=20)
 
@@ -33,6 +36,7 @@ class RedditScraper(ctk.CTkFrame):
         self.error = False
         self.done = False
         self.start_time = 0
+        self.subreddit = None
 
     def log_message(self, message):
         """Helper function to append messages to the output box."""
@@ -53,6 +57,9 @@ class RedditScraper(ctk.CTkFrame):
             sleep(0.06)
 
     def start_scraping(self):
+        if self.subreddit_entry.get() == None:
+            print("scarystories subreddit")
+        self.subreddit = "scarystories"
         self.start_time = time()
         self.done = False
         self.error = False
@@ -69,7 +76,7 @@ class RedditScraper(ctk.CTkFrame):
                                  user_agent='VideoGenerator/1.0 by Tiny-Swimming-3547')
 
             scraped_data = {"title": [], "body": [], "author": []}
-            hot_posts = reddit.subreddit('scarystories').hot(limit=10)
+            hot_posts = reddit.subreddit(self.subreddit).hot(limit=10)
 
             for post in hot_posts:
                 scraped_data["body"].append(str(post.selftext))
