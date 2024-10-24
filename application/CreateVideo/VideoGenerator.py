@@ -312,6 +312,8 @@ class VideoGenerator:
         if second_video:
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
             combined_clip = clips_array([[second_clip], [first_clip]])  # Stack second video on top, first on bottom
+            if self.modifications['subtitles_second_clip']:
+                original_audio = second_clip.audio
         else:
             first_clip = first_clip.resize(height=target_height).on_color(
             size=(target_width, target_height),  # Resize to fit 9:16
@@ -477,8 +479,8 @@ class VideoGenerator:
 
         subs = pysubs2.load(srt_file)
         subs.styles["Default"].alignment = 5  # Set alignment to bottom-center
-        subs.styles["Default"].fontname = "Monsterrat Black"  # Replace with your custom font name
-        subs.styles["Default"].fontsize = 16 
+        subs.styles["Default"].fontname = "TheBoldFont-Bold"  # Replace with your custom font name
+        subs.styles["Default"].fontsize = 17 
 
         subs.save(subtitle_fileName)
 
