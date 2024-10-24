@@ -16,6 +16,7 @@ class UploadFrame(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
         self.create_widgets()
+        
     def create_widgets(self):
         # Title
         self.title_label = ctk.CTkLabel(self, text="Upload Media", font=ctk.CTkFont(size=24, weight="bold"))
@@ -49,6 +50,7 @@ class UploadFrame(ctk.CTkFrame):
         else:
             self.url_entry.configure(placeholder_text="Enter YouTube URL")
             self.media_type_dropdown.configure(state="normal")  # Enable media type dropdown for other folder types
+
     def submit_url(self):
         # Get the title, folder, media type, and URL from the UI
         title = self.title_entry.get()
@@ -71,43 +73,42 @@ class UploadFrame(ctk.CTkFrame):
             if folder == "Scripts":
                 self.upload_script(title, folder, url_or_script)
             else:
-                # Detect if the URL is from YouTube or Kick and download accordingly
+                # Detect if the URL is from YouTube and download accordingly
                 if "youtube.com" in url_or_script or "youtu.be" in url_or_script:
                     if media_type == "Video":
-                        self.download_video(url_or_script, title, folder, platform="youtube")
+                        self.download_video(url_or_script, title, folder)
                     elif media_type == "MP3":
                         self.download_mp3(url_or_script, title, folder)
-                elif "kick.com" in url_or_script:
-                    self.download_video(url_or_script, title, folder, platform="kick")
                 else:
                     print("Invalid or unsupported URL")
         else:
             print("Title, Folder, or URL/Script is empty")
 
 
-    def download_video(self, url, title, folder, platform):
+    def download_video(self, url, title, folder):
         save_path = os.path.join(os.getcwd(), "videos")
         os.makedirs(save_path, exist_ok=True)  # Ensure the save path exists
 
         filename = f'{title}.mp4'
 
-        # Different download options based on the platform
-        if platform == "youtube":
-            ydl_opts = {
-                'format': 'best',
-                'outtmpl': f'{save_path}/{filename}',
-                'rm-cache-dir': True  # Clear the cache before downloading
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-        elif platform == "kick":
-            ydl_opts = {
-                'format': 'best',
-                'outtmpl': f'{save_path}/{filename}',
-                'rm-cache-dir': True  # Clear the cache before downloading
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+        # Download the best video and audio separately and merge them
+        ydl_opts = {
+            'format': 'bestvideo+bestaudio/best',  # Download the best video and best audio separately
+            'outtmpl': f'{save_path}/{filename}',
+            'merge_output_format': 'mp4',  # Ensure that the output is merged into an mp4 file
+            'rm-cache-dir': True,  # Clear the cache before downloading
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'aac',  # Convert the audio to AAC format
+                'preferredquality': '192'
+            }, {
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4'  # Ensure final output is MP4
+            }]
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
         video_path = f'{save_path}/{filename}'
         print(f"Downloaded video to {video_path}")
@@ -118,6 +119,7 @@ class UploadFrame(ctk.CTkFrame):
 
         # Upload Video and Thumbnail to Firebase Storage
         self.upload_to_firebase(title, folder, video_path, thumbnail_path, duration)
+
 
     def download_mp3(self, url, title, folder):
         save_path = os.path.join(os.getcwd(), "music")

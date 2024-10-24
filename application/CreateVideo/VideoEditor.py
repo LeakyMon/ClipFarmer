@@ -22,7 +22,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.second_thumbnail = None
         self.script_selection = None
         self.music_selection = None
-        self.script_text = None
+        self.script = None
 
         self.modifications = {
             "subtitles_top": True,
@@ -234,7 +234,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.modifications["length"] = int(self.length_entry.get()) if self.length_entry.get() else None
         self.modifications["title"] = self.title_entry.get()
         self.modifications["letterbox"] = self.letterbox_var.get()
-        self.modifications["script_text"] = self.script_textbox.get()
+        self.modifications["script_text"] = self.script
 
         # Check if there's a second video
         if self.first_video_data is None and self.second_video_data is None:
@@ -479,7 +479,7 @@ class CreateVideoPage(ctk.CTkFrame):
         self.duration_entry.delete(0, tk.END)  # Clear the duration entry
         self.length_entry.delete(0, tk.END)  # Clear the length entry
         self.title_entry.delete(0, tk.END)  # Clear the title entry
-        self.script_textbox.delete(0,tk.END)
+        self.script_textbox.delete("1.0", tk.END)  # Clear the textbox content
         self.script_text = None
         
 

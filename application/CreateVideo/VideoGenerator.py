@@ -8,6 +8,7 @@ from datetime import timedelta
 import json
 import requests
 import sys
+from ElevenLabs.tts import narrate_story_elevenlabs
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import check_if_title_exists, upload_file_to_storage, add_video_metadata,get_video_duration  # Import function to fetch videos
@@ -56,8 +57,6 @@ class VideoGenerator:
     def getThumbnail(self):
         return self.thumbnail
 
-
-
     def get_clip_duration(self):
         """Determine whether to use 'length' or 'duration' based on what's provided."""
         length = self.modifications['length']
@@ -82,7 +81,15 @@ class VideoGenerator:
 
         # --- STEP 2. FIND AUDIO/SUBTITLE SOURCE --- #
         audio_source = first_clip_path if self.modifications['audio_top'] else second_clip_path
-        subtitle_source = first_clip_path if self.modifications['subtitles_top'] else second_clip_path
+        if self.modifications['subtitles_top'] == True:
+            subtitle_source = first_clip_path
+        elif self.modifications['subtitles_second_clip'] == True:
+            subtitle_source = second_clip_path
+        elif self.modifications['script_text'] != None:
+            subtitle_source = "tts"
+        else:
+            subtitle_source = None
+        #subtitle_source = first_clip_path if self.modifications['subtitles_top'] else second_clip_path
         print("AUDIO SOURCE:", audio_source)
         print("SUBTITLE SOURCE", subtitle_source)
 
@@ -283,39 +290,50 @@ class VideoGenerator:
         first_clip = VideoFileClip(first_video).subclip(0, self.clip_duration)
 
         # Apply letterbox if enabled
-        if self.modifications["letterbox"] == True:
+        if self.modifications["letterbox"]:
             print("Handling letterbox")
             if self.modifications["audio_top"]:
                 original_audio = first_clip.audio
+            elif self.modifications["script_text"]:
+                print("Use Eleven Labs for narration")
+                narration_filepath = narrate_story_elevenlabs(self.modifications["script_text"])
+                if narration_filepath:
+                    original_audio = AudioFileClip(narration_filepath)
+
             first_clip = self.apply_letterbox(first_clip, target_width, target_height)
 
+        elif self.modifications["script_text"]:
+            print("Use Eleven Labs for narration")
+            narration_filepath = narrate_story_elevenlabs(self.modifications["script_text"])
+            if narration_filepath:
+                original_audio = AudioFileClip(narration_filepath)
+                
         # Load the second clip if provided
         if second_video:
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
             combined_clip = clips_array([[second_clip], [first_clip]])  # Stack second video on top, first on bottom
         else:
+            first_clip = first_clip.resize(height=target_height).on_color(
+            size=(target_width, target_height),  # Resize to fit 9:16
+            color=(0, 0, 0),  # Black background
+            pos="center"  # Center the video
+            )
             combined_clip = first_clip  # Only use the first clip
 
-        # Determine which clip's audio to use based on user input
-        if self.modifications["audio_top"] and self.modifications["letterbox"] == False:  # Extract audio from the first clip
-            print("Extracting audio from the first clip")
-            original_audio = first_clip.audio
-        elif second_video and self.modifications["audio_second_clip"]:  # Extract audio from the second clip
-            print("Extracting audio from the second clip")
-            original_audio = second_clip.audio
+        # If audio exists, attach it to the combined clip
+        if original_audio is not None:
+            combined_clip = combined_clip.set_audio(original_audio)
+
+            # Save the audio as a separate file
+            #audioFilePath = os.path.join(output_dir, "output_audio.wav")
+            original_audio.write_audiofile(audioFilePath)
+            print(f"Audio saved to: {audioFilePath}")
         else:
-            print("No valid audio source selected or available")
+            print("No audio available, proceeding without audio.")
 
-        # Attach the audio to the combined clip if audio was selected
-        #if original_audio is not None:
-        #    combined_clip = combined_clip.set_audio(original_audio)
-        #else:
-         #   print("No audio detected or selected, proceeding without audio.")
-
-        # Save the combined video with or without audio
+        # Save the combined video
         output_filepath = os.path.join(output_dir, "combined_output.mp4")
         combined_clip.write_videofile(output_filepath, audio_codec='aac')
-        original_audio.write_audiofile(audioFilePath)
         self.combinedFilePath = output_filepath  # Store the combined file path for future use
 
         return self.combinedFilePath
@@ -323,37 +341,17 @@ class VideoGenerator:
     from moviepy.editor import ColorClip
 
     def apply_letterbox(self, clip, target_width, target_height):
-        """Resize the video to fit within a target aspect ratio (9:16) while adding black bars (letterboxing) if needed."""
+        """Resize the video to fit within the target aspect ratio (9:16) and add letterboxing."""
         
-        # Get the current width and height of the clip
-        clip_width, clip_height = clip.size
+        # Resize the clip while maintaining the aspect ratio and adding letterboxing
+        resized_clip = clip.resize(height=target_height).on_color(
+            size=(target_width, target_height),  # Set the desired final size
+            color=(0, 0, 0),  # Black color for the letterbox
+            pos="center"  # Center the video in the frame
+        )
         
-        # Calculate the aspect ratios
-        target_aspect_ratio = target_width / target_height
-        clip_aspect_ratio = clip_width / clip_height
-        
-        # Check if letterboxing is necessary (i.e., if the video is wider than the target aspect ratio)
-        if clip_aspect_ratio > target_aspect_ratio:
-            # The video is wider than the target, so we fit it by width and add black bars on top and bottom
-            new_width = target_width
-            new_height = new_width / clip_aspect_ratio
-            resized_clip = clip.resize(width=new_width)
-        else:
-            # The video is taller than or equal to the target, so we fit it by height and add black bars on the sides
-            new_height = target_height
-            new_width = new_height * clip_aspect_ratio
-            resized_clip = clip.resize(height=new_height)
+        return resized_clip
 
-        # Create a black background with the target size
-        letterbox_clip = ColorClip(size=(target_width, target_height), color=(0, 0, 0))
-
-        # Composite the resized video on top of the black background, centered
-        print("CLIP DURATION",clip.duration)
-        final_clip = letterbox_clip.set_duration(clip.duration)
-        #final_clip = final_clip.set_audio(clip.audio)  # Keep the audio from the original clip
-        final_clip = CompositeVideoClip([final_clip, resized_clip.set_pos("center")])
-
-        return final_clip
 
 
     def add_subtitles_with_ffmpeg(self, video_path, subtitle_path):
@@ -429,7 +427,7 @@ class VideoGenerator:
 
             # Determine when to start a new subtitle line
             new_line_conditions = [
-                total + len(word.text) + 1 > 15,  # Word count limit for a subtitle line
+                total + len(word.text) + 1 > 13,  # Word count limit for a subtitle line
                 (start_time - prev_end_time) * 1000 > min_duration_ms,  # Long pause between words
                 word.text.strip().endswith(('.', '?', '!'))  # End of sentence punctuation
             ]
@@ -480,6 +478,7 @@ class VideoGenerator:
         subs = pysubs2.load(srt_file)
         subs.styles["Default"].alignment = 5  # Set alignment to bottom-center
         subs.styles["Default"].fontname = "Monsterrat Black"  # Replace with your custom font name
+        subs.styles["Default"].fontsize = 16 
 
         subs.save(subtitle_fileName)
 
