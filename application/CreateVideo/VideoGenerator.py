@@ -553,11 +553,13 @@ class VideoGenerator:
         """Delete all temporary files like .mp4, .wav, .ass, and .srt."""
         temp_files = [
             os.path.join(output_dir, "output_audio.wav"),
+            os.path.join(output_dir, "temp_audio.wav"),
             os.path.join(output_dir, "subtitles.ass"),
             os.path.join(output_dir, "subtitles.srt"),
             os.path.join(output_dir, "combined_output.mp4"),
             os.path.join(output_dir, "first_video.mp4"),
             os.path.join(output_dir, "second_video.mp4"),
+            os.path.join(output_dir, "thumbnail.jpg"),
         ]
 
         for file in temp_files:

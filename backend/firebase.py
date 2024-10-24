@@ -15,7 +15,7 @@ firebase_admin.initialize_app(cred, {
 db = firestore.client()
 bucket = storage.bucket()
 
-def upload_file_to_storage(self,file_path, file_name, folder_type, file_type):
+def upload_file_to_storage(file_path, file_name, folder_type, file_type):
     """Uploads a file to Firebase Storage (video or thumbnail) and returns its public URL."""
     blob = bucket.blob(f'{folder_type}/{file_type}/{file_name}')
     blob.upload_from_filename(file_path)
@@ -25,7 +25,7 @@ def upload_file_to_storage(self,file_path, file_name, folder_type, file_type):
 
 
 
-def add_video_metadata(self,title, video_url, thumbnail_url, folder_type, duration):
+def add_video_metadata(title, video_url, thumbnail_url, folder_type, duration):
     """Adds a new video document to the 'videos' collection in Firestore."""
     
     # Generate a unique ID for the document
@@ -126,7 +126,7 @@ def update_upload_status(video_id, platform, url):
         print(f"Video with ID {video_id} not found.")
 
 
-def delete_video_from_firebase(self,video_id, folder_type, file_name, thumbnail_name):
+def delete_video_from_firebase(video_id, folder_type, file_name, thumbnail_name):
     """Deletes a video from both Firestore and Firebase Storage."""
     # Delete video from Firestore
     db.collection('videos').document(video_id).delete()
@@ -141,7 +141,7 @@ def delete_video_from_firebase(self,video_id, folder_type, file_name, thumbnail_
     print(f"Deleted video and thumbnail from Firebase Storage: {file_name} and {thumbnail_name}")
 
 
-def add_song_metadata(self,title, url, thumbnail_url, folder_type, duration):
+def add_song_metadata(title, url, thumbnail_url, folder_type, duration):
     """Adds a new video document to the 'videos' collection in Firestore."""
     
     # Generate a unique ID for the document
@@ -162,7 +162,7 @@ def add_song_metadata(self,title, url, thumbnail_url, folder_type, duration):
     print(f"Metadata for '{title}' saved in Firestore with ID: {song_id}")
 
 
-def check_if_song_exists(self,title):
+def check_if_song_exists(title):
     """Checks if a video with the given title already exists in Firestore."""
     videos_ref = db.collection('music')
     query = videos_ref.where('title', '==', title).stream()
@@ -172,7 +172,7 @@ def check_if_song_exists(self,title):
     return False
 
 
-def delete_song_from_firebase(self,song_id, folder_type, file_name, thumbnail_name):
+def delete_song_from_firebase(song_id, folder_type, file_name, thumbnail_name):
     """Deletes a video from both Firestore and Firebase Storage."""
     # Delete video from Firestore
     db.collection('music').document(song_id).delete()

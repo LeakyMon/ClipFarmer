@@ -155,3 +155,10 @@ class UploadFrame(ctk.CTkFrame):
         """Displays a success message after video upload."""
         success_label = ctk.CTkLabel(self, text="Video Successfully Uploaded!", font=ctk.CTkFont(size=24, weight="bold"))
         success_label.pack(pady=50)
+
+        self.after(3000,self.reset())
+        
+    def reset(self):
+        """Resets the frame by clearing all widgets and recreating the initial layout."""
+        self.clear_widgets()
+        self.create_widgets()  # Recreate the original layout after clearing everything
