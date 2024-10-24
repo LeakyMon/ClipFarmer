@@ -1,7 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 import os
-from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 # Path to your Firebase credentials JSON file
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "../firebase_credentials.json"))
@@ -152,15 +152,32 @@ def add_song_metadata(title, url, thumbnail_url, folder_type, duration):
         'title': title,
         'url': url,
         'thumbnail': thumbnail_url,
-        'folder': folder_type,
+        'category': folder_type,
         'id': song_id,
-        'duration':duration
+        'duration':duration,
+
     }
 
     # Add the document to Firestore
     db.collection('music').document(song_id).set(song_data)
     print(f"Metadata for '{title}' saved in Firestore with ID: {song_id}")
 
+
+def add_script_metadata(title,url,text,backgroundAudio):
+    script_id = db.collection('scripts').document().id
+
+    # Define the video data
+    script_data = {
+        'title': title,
+        'text': text,
+        'id': script_id,
+        'url':url,
+        'background_audio':backgroundAudio
+    }
+
+    # Add the document to Firestore
+    db.collection('scripts').document(script_id).set(script_data)
+    print(f"Metadata for '{title}' saved in Firestore with ID: {script_id}")
 
 def check_if_song_exists(title):
     """Checks if a video with the given title already exists in Firestore."""
@@ -193,6 +210,18 @@ def get_video_duration(file_path):
         video = VideoFileClip(file_path)
         duration_in_seconds = video.duration  # Duration in seconds
         video.close()  # Close the video file to free up resources
+        return duration_in_seconds
+    except Exception as e:
+        print(f"Error getting video duration: {e}")
+        return None
+    
+
+def get_audio_duration(file_path):
+    """Get the duration of the video in seconds."""
+    try:
+        audio = AudioFileClip(file_path)
+        duration_in_seconds = audio.duration  # Duration in seconds
+        audio.close()  # Close the video file to free up resources
         return duration_in_seconds
     except Exception as e:
         print(f"Error getting video duration: {e}")

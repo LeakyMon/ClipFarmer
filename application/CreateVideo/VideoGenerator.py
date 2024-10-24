@@ -479,6 +479,7 @@ class VideoGenerator:
 
         subs = pysubs2.load(srt_file)
         subs.styles["Default"].alignment = 5  # Set alignment to bottom-center
+        subs.styles["Default"].fontname = "Monsterrat Black"  # Replace with your custom font name
 
         subs.save(subtitle_fileName)
 
