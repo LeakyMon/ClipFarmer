@@ -6,6 +6,14 @@ import os
 import cv2
 import pygame
 from WebUpload.WebUpload import UploadToWeb
+
+
+      
+
+   
+
+
+
 class VideoPlayerFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -49,6 +57,12 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.open_button = ctk.CTkButton(self.control_frame, text="Open Video", command=self.open_video_file)
         self.open_button.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
 
+        
+        # Add the Back button to return to Video Editor
+        self.back_button = ctk.CTkButton(self.control_frame, text="Back", command=self.back_to_video_editor)
+        self.back_button.grid(row=0, column=3, padx=10)
+
+
         self.upload_to_web_button = ctk.CTkButton(self.control_frame, text="Upload Video", command=self.upload_video)
         self.upload_to_web_button.grid(row=1, column=2, columnspan=2, padx=10, pady=5)
 
@@ -56,6 +70,12 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.volume_slider = ctk.CTkSlider(self, from_=0, to=1, number_of_steps=100, command=self.set_volume)
         self.volume_slider.set(1)  # Set default volume to 100%
         self.volume_slider.pack(pady=10)
+
+      
+    def back_to_video_editor(self):
+        """Go back to the Video Editor frame (CreateVideoPage)."""
+        self.controller.select_frame_by_name("Create Video")
+
 
     def play_video(self):
         """Play the video and start audio playback."""

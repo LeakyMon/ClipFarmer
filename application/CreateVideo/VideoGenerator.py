@@ -106,13 +106,14 @@ class VideoGenerator:
             combined_clip = self.apply_caption(combined_clip, self.modifications["caption"])
             final_path = os.path.join(output_dir, "combined_output_with_caption.mp4")
             combined_clip.write_videofile(final_path, audio_codec='aac')
-        else:
+        elif self.modifications['subtitles_top'] or self.modifications['subtitles_second_clip']:
             # --- STEP 5. EXTRACT AUDIO AND ADD SUBTITLES IF NO CAPTION --- #
             ass_path = self.speechToText(audioFilePath)
 
             # --- STEP 6. ADD SUBTITLES TO VIDEO --- #
             final_path = self.add_subtitles_with_ffmpeg(combined_clip_path, ass_path)
-
+        else:
+            final_path = combined_clip_path
         # --- STEP 7. GENERATE THUMBNAIL --- #
         output_thumbnail = self.add_thumbnail(final_path)
 

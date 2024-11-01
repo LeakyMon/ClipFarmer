@@ -429,8 +429,8 @@ class CreateVideoPage(ctk.CTkFrame):
             select_button.grid(row=0, column=2, padx=10)
 
         # Add Back Button
-        back_button = ctk.CTkButton(self.scrollable_frame_music, text="Back", command=self.create_music_view)
-        back_button.pack(pady=10, padx=10, anchor="w")
+        music_back_button = ctk.CTkButton(self.scrollable_frame_music, text="Back", command=self.create_music_view)
+        music_back_button.pack(pady=10, padx=10, anchor="w")
 
     def select_script(self, script):
         print(f"Selected script: {script['title']}")
