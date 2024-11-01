@@ -2,13 +2,18 @@ import firebase_admin
 from firebase_admin import credentials, firestore, storage
 import os
 from moviepy.editor import VideoFileClip, AudioFileClip
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Path to your Firebase credentials JSON file
-cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "../firebase_credentials.json"))
+cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+cred = credentials.Certificate(cred_path)
 
 # Initialize the Firebase Admin SDK
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'clipfarmer-f8a79.appspot.com'
+    'storageBucket': os.getenv("FIREBASE_STORAGE_BUCKET")
 })
 
 # Initialize Firestore and Firebase Storage

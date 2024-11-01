@@ -1,6 +1,10 @@
 import requests
 import json
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def narrate_story_elevenlabs(text):
     print("IN NARRATE ELEMENTS")
@@ -12,8 +16,8 @@ def narrate_story_elevenlabs(text):
         print(f"'{narration_filepath}' already exists, skipping Eleven Labs request.")
         return narration_filepath
 
-    # ElevenLabs API credentials
-    API_KEY = 'sk_160b55a580791235d3933fa66d354db0eefea6bddc1d55f3'
+    # ElevenLabs API credentials loaded from environment
+    API_KEY = os.getenv('ELEVENLABS_API_KEY')
     url = 'https://api.elevenlabs.io/v1/text-to-speech/e5WNhrdI30aXpS2RSGm1'  # Use Adam (legacy) Voice ID here
 
     headers = {

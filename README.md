@@ -39,7 +39,30 @@ Upon launching ClipFarmer, the application opens a window displaying a homepage 
     pip install -r requirements.txt
     ```
 
-3. **Run the application**:
+3. **Setup Environment Variables**:
+    - Create a `.env` file in the root directory of the project. This file will store your sensitive information securely and keep it hidden from the public repository.
+    - Inside the `.env` file, add the following variables:
+
+      ```plaintext
+      # Firebase Credentials
+      FIREBASE_CREDENTIALS_PATH=path/to/your/firebase_credentials.json
+      FIREBASE_STORAGE_BUCKET=your-firebase-storage-bucket
+
+      # Reddit API Credentials
+      REDDIT_CLIENT_ID=your-reddit-client-id
+      REDDIT_CLIENT_SECRET=your-reddit-client-secret
+      REDDIT_USER_AGENT=your-reddit-user-agent
+      ```
+
+    - **Explanation of Variables**:
+      - `FIREBASE_CREDENTIALS_PATH`: Path to your Firebase credentials JSON file.
+      - `FIREBASE_STORAGE_BUCKET`: The Firebase storage bucket name for your project.
+      - `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, and `REDDIT_USER_AGENT`: Your Reddit API credentials required for accessing Reddit data.
+
+4. **Add .env to .gitignore**:
+    - To keep your credentials secure, ensure `.env` is listed in your `.gitignore` file to prevent it from being tracked in the repository.
+
+5. **Run the application**:
     ```bash
     python main.py
     ```

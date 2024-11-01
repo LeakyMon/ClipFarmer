@@ -1,3 +1,6 @@
 # Ignore Firebase credentials and client secrets
 firebase_credentials.json
 application/WebUpload/YTUpload/client_secret.json
+*.pyc
+__pycache__/
+.env

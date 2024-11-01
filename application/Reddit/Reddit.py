@@ -8,7 +8,10 @@ from time import time
 from itertools import cycle
 from sys import stdout
 from time import sleep
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
 class RedditScraper(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -24,7 +27,7 @@ class RedditScraper(ctk.CTkFrame):
         # Start Button
         self.subreddit_entry = ctk.CTkEntry(self.main_frame, placeholder_text= "Enter a subreddit")
         self.subreddit_entry.pack(pady=10)
-        
+     
         self.scrape_button = ctk.CTkButton(self.main_frame, text="Start Scraping", command=self.start_scraping)
         self.scrape_button.pack(pady=20)
 
@@ -57,9 +60,11 @@ class RedditScraper(ctk.CTkFrame):
             sleep(0.06)
 
     def start_scraping(self):
-        if self.subreddit_entry.get() == None:
-            print("scarystories subreddit")
-        self.subreddit = "scarystories"
+        if self.subreddit_entry.get() == "":
+            self.subreddit = "scarystories"
+        else:
+            self.subreddit = self.subreddit_entry.get()
+            
         self.start_time = time()
         self.done = False
         self.error = False
@@ -71,9 +76,9 @@ class RedditScraper(ctk.CTkFrame):
 
     def scrape_reddit(self):
         try:
-            reddit = praw.Reddit(client_id='sLELtGZgxpACY3CRqSB8kA',
-                                 client_secret='LzOlUDo625PEteH3vxL-yCTOeRxm2g',
-                                 user_agent='VideoGenerator/1.0 by Tiny-Swimming-3547')
+            reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'),
+                                 client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+                                 user_agent=os.getenv('REDDIT_USER_AGENT'))
 
             scraped_data = {"title": [], "body": [], "author": []}
             hot_posts = reddit.subreddit(self.subreddit).hot(limit=10)
@@ -97,5 +102,3 @@ class RedditScraper(ctk.CTkFrame):
         except Exception as e:
             self.error = True
             self.log_message(f"Error: {str(e)}")
-
-
