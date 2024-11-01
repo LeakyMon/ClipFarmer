@@ -7,13 +7,6 @@ import cv2
 import pygame
 from WebUpload.WebUpload import UploadToWeb
 
-
-      
-
-   
-
-
-
 class VideoPlayerFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -71,9 +64,22 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.volume_slider.set(1)  # Set default volume to 100%
         self.volume_slider.pack(pady=10)
 
-      
     def back_to_video_editor(self):
-        """Go back to the Video Editor frame (CreateVideoPage)."""
+        """Go back to the Video Editor frame (CreateVideoPage) and clear the video display."""
+        # Stop the video and audio playback
+        self.is_playing = False
+        if self.cap:
+            self.cap.release()  # Release the video capture object
+        pygame.mixer.music.stop()  # Stop the audio playback
+
+        # Clear the canvas by deleting any existing image
+        self.video_canvas.delete("all")
+
+        # Clear the video and audio file variables
+        self.video_file = None
+        self.audio_file = None
+
+        # Switch to the Create Video frame
         self.controller.select_frame_by_name("Create Video")
 
 
