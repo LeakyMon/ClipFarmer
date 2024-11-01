@@ -1,6 +1,11 @@
 import customtkinter
 from Login.Auth import Authentication
 from tkinter import messagebox
+from dotenv import load_dotenv
+load_dotenv
+import os
+test_email = os.getenv("USER_EMAIL")
+test_password = os.getenv("USER_PASSWORD")
 
 class AuthPage(customtkinter.CTkFrame):
     def __init__(self, parent, controller):
@@ -38,8 +43,8 @@ class AuthPage(customtkinter.CTkFrame):
 
     def skip(self):
         # Use a default account to skip login
-        email = "hmonforte17@gmail.com"
-        password = "password"
+        email = test_email
+        password = test_password
         result = self.auth_instance.sign_in(email, password)
         if result:
             self.parent.show_home_page()
