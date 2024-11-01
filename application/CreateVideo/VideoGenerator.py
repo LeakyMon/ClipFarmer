@@ -121,6 +121,8 @@ class VideoGenerator:
         print("Thumbnail path: ", output_thumbnail)
         self.thumbnail = output_thumbnail
         #self.add_to_library(final_path, output_thumbnail)
+        combined_clip.close()
+
         return final_path
 
 
@@ -338,6 +340,17 @@ class VideoGenerator:
         output_filepath = os.path.join(output_dir, "combined_output.mp4")
         combined_clip.write_videofile(output_filepath, audio_codec='aac')
         self.combinedFilePath = output_filepath  # Store the combined file path for future use
+
+
+        first_clip.close()
+        if second_video:
+            second_clip.close()
+        if original_audio:
+            original_audio.close()
+        if combined_clip:
+            combined_clip.close()
+
+
 
         return self.combinedFilePath
 
