@@ -38,8 +38,8 @@ class AuthPage(customtkinter.CTkFrame):
 
     def skip(self):
         # Use a default account to skip login
-        email = "default_user@example.com"
-        password = "default_password"
+        email = "hmonforte17@gmail.com"
+        password = "password"
         result = self.auth_instance.sign_in(email, password)
         if result:
             self.parent.show_home_page()
