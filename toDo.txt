@@ -4,3 +4,5 @@
 - Add new edits
 - Figure out firebase storage capacity (usage)
 - Eleven labs voice
+
+- Clean up VideoEditor folder display
