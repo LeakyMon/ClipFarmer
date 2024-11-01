@@ -1,12 +1,39 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
+from firebase_admin import credentials, firestore, storage,auth
 import os
 from moviepy.editor import VideoFileClip, AudioFileClip
 from dotenv import load_dotenv
-
+import pyrebase
 # Load environment variables
 load_dotenv()
 
+
+# Firebase configuration from environment variables
+firebase_config = {
+    'authDomain': os.getenv("FIREBASE_AUTH_DOMAIN"),
+    'databaseURL': os.getenv("FIREBASE_DATABASE_URL"),
+    'storageBucket': os.getenv("FIREBASE_STORAGE_BUCKET"),
+    'projectId': os.getenv("FIREBASE_PROJECT_ID"),
+    'appId': os.getenv("FIREBASE_APP_ID")
+}
+
+# Path to your Firebase credentials JSON file
+cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+cred = credentials.Certificate(cred_path)
+
+# Initialize the Firebase Admin SDK with additional config
+firebase_admin.initialize_app(cred, {
+    'storageBucket': firebase_config['storageBucket'],
+    'databaseURL': firebase_config['databaseURL']
+})
+
+# Initialize Firestore and Firebase Storage
+db = firestore.client()
+bucket = storage.bucket()
+
+
+
+"""
 # Path to your Firebase credentials JSON file
 cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
 cred = credentials.Certificate(cred_path)
@@ -19,6 +46,113 @@ firebase_admin.initialize_app(cred, {
 # Initialize Firestore and Firebase Storage
 db = firestore.client()
 bucket = storage.bucket()
+
+
+"""
+
+def get_auth():
+    config = {
+        "apiKey": os.getenv("FIREBASE_API_KEY"),
+        "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
+        "databaseURL": os.getenv("FIREBASE_DATABASE_URL"),
+        "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET")
+    }
+    firebase = pyrebase.initialize_app(config)
+    auth = firebase.auth()
+    return auth
+
+
+def setup_firestore_collections():
+    """
+    Creates the required Firestore collections: videos, scripts, and music.
+    Each collection will have a sample document to initialize the structure.
+    """
+
+    # Set up 'videos' collection
+    video_data = {
+        'duration': 0.0,
+        'folder': '',
+        'id': '',
+        'thumbnail': '',
+        'title': '',
+        'url': '',
+        'uploaded': False,
+        'upload_url': {
+            'Instagram': '',
+            'TikTok': '',
+            'YouTube': ''
+        }
+    }
+    db.collection('videos').document('sample_video').set(video_data)
+    print("Initialized 'videos' collection with a sample document.")
+
+    # Set up 'scripts' collection
+    script_data = {
+        'background_audio': '',
+        'id': '',
+        'text': '',
+        'title': '',
+        'url': ''
+    }
+    db.collection('scripts').document('sample_script').set(script_data)
+    print("Initialized 'scripts' collection with a sample document.")
+
+    # Set up 'music' collection
+    music_data = {
+        'duration': 0.0,
+        'category': '',
+        'id': '',
+        'thumbnail': '',
+        'title': '',
+        'url': ''
+    }
+    db.collection('music').document('sample_music').set(music_data)
+    print("Initialized 'music' collection with a sample document.")
+
+def setup_storage_structure():
+    """
+    Creates the required folder structure in Firebase Storage:
+    - Background/thumbnails, Background/videos
+    - CreatedVideos/thumbnails, CreatedVideos/videos
+    - Overlay/thumbnails, Overlay/videos
+    - Music/music, Music/songs, Music/thumbnails
+    - Scripts/scripts
+    - VoiceOvers/audio
+    """
+    folder_structure = [
+        "Background/thumbnails", "Background/videos",
+        "CreatedVideos/thumbnails", "CreatedVideos/videos",
+        "Overlay/thumbnails", "Overlay/videos",
+        "Music/music", "Music/songs", "Music/thumbnails",
+        "Scripts/scripts",
+        "VoiceOvers/audio"
+    ]
+
+    # Create a zero-byte file to upload for initializing the folders
+    dummy_file_path = "dummy.txt"
+    with open(dummy_file_path, "w") as f:
+        f.write("This is a placeholder file to initialize the folder structure.")
+
+    # Create each folder in Firebase Storage by uploading a dummy file
+    for folder in folder_structure:
+        blob = bucket.blob(f"{folder}/placeholder.txt")
+        blob.upload_from_filename(dummy_file_path)
+        print(f"Initialized folder: {folder}")
+
+    # Remove the local dummy file after upload
+    os.remove(dummy_file_path)
+    print("Storage structure initialized.")
+
+# Run setup functions
+"""
+ONLY FOR FIRST USERS
+"""
+#setup_firestore_collections()
+#setup_storage_structure()
+
+
+def login(self):
+    print("loggin in")
 
 def upload_file_to_storage(file_path, file_name, folder_type, file_type):
     """Uploads a file to Firebase Storage (video or thumbnail) and returns its public URL."""

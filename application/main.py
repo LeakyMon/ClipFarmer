@@ -12,6 +12,7 @@ from Reddit.Reddit import RedditScraper
 from backend.firebase import (
     list_folders_in_bucket,get_videos_from_folder
 )
+from Login.Login import AuthPage  # Import the AuthPage class
 
 
 class App(customtkinter.CTk):
@@ -42,6 +43,7 @@ class App(customtkinter.CTk):
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
         self.navigation_frame.grid_rowconfigure(9, weight=1)
+        self.navigation_frame.grid_forget()  # Hide navigation frame initially
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Image Example", image=self.logo_image,
                                                              compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -95,26 +97,13 @@ class App(customtkinter.CTk):
                                                                 command=self.change_appearance_mode_event)
         self.appearance_mode_menu.grid(row=9, column=0, padx=20, pady=20, sticky="s")
 
-        # Create the new home frame (replace old home frame)
-        self.home_frame = HomeFrame(self, controller=self)
 
-        # create second frame
-        self.second_frame = CreateVideoPage(self, controller=self)
+        self.auth_frame = AuthPage(self, controller=self)  # Login screen frame
 
-        # create third frame
-        self.third_frame = UploadFrame(self, controller=self)
+    
 
-        # create library frame
-        self.library_frame = LibraryFrame(self, controller=self)
+        self.initialize_frames()
 
-        # create video player frame
-        self.videoplayer_frame = VideoPlayerFrame(self, controller=self)
-
-        self.upload_to_web_frame = UploadToWeb(self, controller=self)
-
-        self.database_frame = ModifyDatabase(self, controller=self)
-
-        self.reddit_scraper_frame = RedditScraper(self,controller=self)
 
         self.folders = []
         self.videos = []
@@ -124,7 +113,27 @@ class App(customtkinter.CTk):
         self.load_data()
 
         # select default frame
-        self.select_frame_by_name("home")
+        #self.select_frame_by_name("home")
+        self.auth_frame.grid(row=0, column=1, sticky="nsew")
+
+    def initialize_frames(self):
+        """Initialize all content frames but keep them hidden until login."""
+        self.home_frame = HomeFrame(self, controller=self)
+        self.second_frame = CreateVideoPage(self, controller=self)
+        self.third_frame = UploadFrame(self, controller=self)
+        self.library_frame = LibraryFrame(self, controller=self)
+        self.videoplayer_frame = VideoPlayerFrame(self, controller=self)
+        self.upload_to_web_frame = UploadToWeb(self, controller=self)
+        self.database_frame = ModifyDatabase(self, controller=self)
+        self.reddit_scraper_frame = RedditScraper(self, controller=self)
+
+    def show_home_page(self):
+        """Displays the home page after successful login."""
+        self.auth_frame.grid_forget()  # Hide the login frame
+        self.navigation_frame.grid(row=0, column=0, sticky="nsew")  # Show navigation frame
+        self.select_frame_by_name("home")  # Show the home frame
+
+
 
     def load_data(self):
         folder_list = list_folders_in_bucket()  # Fetch the folders list
