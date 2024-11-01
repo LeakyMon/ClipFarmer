@@ -548,7 +548,6 @@ class VideoGenerator:
             print(f"Error uploading to Firebase: {e}")
 
         print(f"Video '{title}' successfully uploaded to Firebase Storage and metadata saved in Firestore.")
-        self.cleanup_temp_files()
 
    
 

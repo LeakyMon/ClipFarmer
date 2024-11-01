@@ -8,7 +8,7 @@ from .VideoGenerator import VideoGenerator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.firebase import get_videos_from_folder  # Import function to fetch videos
 ### --- BOTTOM AUDIO IS SECOND CLIP --- ###
-
+from CreateVideo.VideoGenerator import VideoGenerator  # Import the VideoGenerator class
 
 class CreateVideoPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -355,6 +355,7 @@ class CreateVideoPage(ctk.CTkFrame):
         # After the video generation process is completed
             print(f"Video generated and saved to: {video_generator.filepath}")
             self.reset()
+            video_generator.cleanup_temp_files()
             self.controller.videoplayer_frame.load_video(video_generator.getFilepath())
             self.controller.select_frame_by_name("Video Player")
         else:

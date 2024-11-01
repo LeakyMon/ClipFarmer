@@ -4,3 +4,4 @@ application/WebUpload/YTUpload/client_secret.json
 *.pyc
 __pycache__/
 .env
+application/WebUpload/YTUpload/client_secret.json

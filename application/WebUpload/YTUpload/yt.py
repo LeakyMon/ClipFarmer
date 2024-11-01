@@ -23,7 +23,7 @@ RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, client.NotConnected,
                         client.ResponseNotReady, client.BadStatusLine)
 RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 
-CLIENT_SECRETS_FILE = r'C:\Users\hecto\Desktop\ClipFarmer\application\WebUpload\YTUpload\client_secret.json'
+CLIENT_SECRETS_FILE = os.getenv("YOUTUBE_CLIENT_SECRET_PATH")
 
 
 SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
