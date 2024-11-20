@@ -14,9 +14,9 @@ def narrate_story_elevenlabs(text):
 
 
     # Check if narration file already exists
-    if os.path.exists(narration_filepath):
-        print(f"'{narration_filepath}' already exists, skipping Eleven Labs request.")
-        return narration_filepath
+    #if os.path.exists(narration_filepath):
+    #    print(f"'{narration_filepath}' already exists, skipping Eleven Labs request.")
+    #    return narration_filepath
 
     # ElevenLabs API credentials loaded from environment
     API_KEY = os.getenv('ELEVENLABS_API_KEY')

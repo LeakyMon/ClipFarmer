@@ -356,19 +356,6 @@ class VideoGenerator:
         combined_clip.write_videofile(output_filepath, audio_codec='aac')
         self.combinedFilePath = output_filepath  # Store the combined file path for future use
 
-        """
-        first_clip.close()
-        if second_video:
-            second_clip.close()
-        if original_audio:
-            original_audio.close()
-        if combined_clip:
-            combined_clip.close()
-        """
-
-        
-        
-
         # Ensure resources are explicitly closed
         try:
             if first_clip:

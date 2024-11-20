@@ -153,6 +153,7 @@ class VideoPlayerFrame(ctk.CTkFrame):
             try:
                 video_clip = VideoFileClip(self.video_file)  # Load the video
                 audio = video_clip.audio
+                
                 self.audio_file = "temp_audio.wav"  # Temporary audio file
                 audio.write_audiofile(self.audio_file)  # Save the audio
                 pygame.mixer.music.load(self.audio_file)  # Load into pygame

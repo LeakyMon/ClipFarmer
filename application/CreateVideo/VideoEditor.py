@@ -332,19 +332,50 @@ class CreateVideoPage(ctk.CTkFrame):
         self.create_folder_view()
 
     def display_on_canvas(self, split=False):
-        """Displays the selected video thumbnails on the canvas."""
+        """Displays the selected video thumbnails on the canvas and binds click events."""
         self.video_canvas.delete("all")
 
         if split:
             # Split canvas: first video on bottom half, second video on top half
             if self.first_thumbnail:
-                self.video_canvas.create_image(0, 240, anchor="nw", image=self.first_thumbnail)  # Bottom half
+                first_image_id = self.video_canvas.create_image(0, 240, anchor="nw", image=self.first_thumbnail)  # Bottom half
+                self.video_canvas.tag_bind(first_image_id, "<Button-1>", lambda event: self.show_remove_option("first"))
+
             if self.second_thumbnail:
-                self.video_canvas.create_image(0, 0, anchor="nw", image=self.second_thumbnail)  # Top half
+                second_image_id = self.video_canvas.create_image(0, 0, anchor="nw", image=self.second_thumbnail)  # Top half
+                self.video_canvas.tag_bind(second_image_id, "<Button-1>", lambda event: self.show_remove_option("second"))
         else:
             # Only first video displayed fully
             if self.first_thumbnail:
-                self.video_canvas.create_image(0, 0, anchor="nw", image=self.first_thumbnail)
+                first_image_id = self.video_canvas.create_image(0, 0, anchor="nw", image=self.first_thumbnail)
+                self.video_canvas.tag_bind(first_image_id, "<Button-1>", lambda event: self.show_remove_option("first"))
+
+    def show_remove_option(self, video_position):
+        """Shows a dialog with the option to remove the selected video."""
+        # Create a top-level dialog for remove confirmation
+        remove_dialog = tk.Toplevel(self)
+        remove_dialog.title("Remove Video")
+        remove_dialog.geometry("200x100")
+
+        label = ctk.CTkLabel(remove_dialog, text="Remove this video?")
+        label.pack(pady=10)
+
+        def remove_video():
+            if video_position == "first":
+                self.first_video_data = None
+                self.first_thumbnail = None
+            elif video_position == "second":
+                self.second_video_data = None
+                self.second_thumbnail = None
+            self.display_on_canvas(split=(self.second_video_data is not None))
+            remove_dialog.destroy()
+
+        # Buttons for confirmation
+        remove_button = ctk.CTkButton(remove_dialog, text="Remove", fg_color="red", command=remove_video)
+        remove_button.pack(side="left", padx=10, pady=10)
+
+        cancel_button = ctk.CTkButton(remove_dialog, text="Cancel", command=remove_dialog.destroy)
+        cancel_button.pack(side="right", padx=10, pady=10)
 
     def submit(self):
         print("submitting with current mods")
