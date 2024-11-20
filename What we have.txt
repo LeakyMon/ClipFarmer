@@ -1,0 +1,52 @@
+Here is a list of features that work
+
+FULLY FUNCTIONING
+- UPLOAD YT VIDEO TO LIBRARY MP4 and MP3
+- CREATE VIDEO
+   - One Video subtitles no Captions
+   - Two videos subtitles no Captions
+   - One Video script to AI voice
+
+NEEDS work
+- Subtitles 85 % good, needs more work, I want to add text bolding when being spoken and incorporate green not just yellow
+- 
+
+
+NEW PLANS
+- Find a way to create a simplistic AI to separate videos by parts or something
+
+
+
+Upload to Youtube X
+Upload video from url X
+
+
+
+
+What we need
+- Scripts from Reddit / Chat GPT
+- Pexel Photo ?
+- New GPT to make thumbnails
+- Reddit https://www.reddit.com/r/scarystories/
+- Add music
+- Find a way to add scripts and use that audio
+
+
+Today is 11/20/24 Im pretty drunk lets go through what we have 
+
+
+-
+
+-PROBLEM: So here are the issues I am having, when I create a video completely, then press back, and create a new video,
+ it completely does not work, ? lets review the back button, I still see a temp audio created, maybe thats the problem 
+-SOLTUION: Reset the VideoPlayer mixpython library, then delete the tempaudio.wav
+
+-PROBLEM: The scrollable frame in VideoEditor back button doesnt reset the scroll to the right orientation / coordinates
+-SOLUTION: look in the scrollable frame custom tkiner and find the function that will reset it.
+
+IMPORTS MSISING:
+
+CUSTOMTKINTER
+PILLOW
+REQUESTS
+MOVIEPY
