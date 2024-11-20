@@ -242,7 +242,7 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("Reddit Scraper")
 
     def chalkboard_button_event(self):
-        print("chalkboard")
+        self.select_frame_by_name("Chalkboard")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
