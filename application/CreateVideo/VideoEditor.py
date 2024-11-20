@@ -99,11 +99,10 @@ class CreateVideoPage(ctk.CTkFrame):
         """Creates a button for each folder."""
         folder_button = ctk.CTkButton(self.scrollable_frame, image=image, text=name, compound="left", command=lambda: self.open_folder(name))
         folder_button.pack(pady=10, padx=10, anchor="w")
-    def create_music_folder_button(self, name, image):
-        """Creates a button for each folder."""
-        folder_button = ctk.CTkButton(self.scrollable_frame_music, image=image, text=name, compound="right", command=lambda: self.open_folder(name))
-        folder_button.pack(pady=10, padx=10, anchor="w")
-    
+        
+        upload_button = ctk.CTkButton(self.scrollable_frame, text=f"Upload to {name}", command=lambda: self.upload_from_computer(name))
+        upload_button.pack(pady=5, padx=10, anchor="w")
+
 
     def open_folder(self, folder_name):
         """Opens the selected folder and displays its videos."""
@@ -401,6 +400,9 @@ class CreateVideoPage(ctk.CTkFrame):
         """Creates a button for each music folder in the specified frame."""
         music_button = ctk.CTkButton(frame, image=image, text=name, compound="left", command=lambda: self.open_music_folder(name))
         music_button.pack(pady=10, padx=10, anchor="w")
+        
+        upload_button = ctk.CTkButton(frame, text=f"Upload to {name}", command=lambda: self.upload_from_computer(name))
+        upload_button.pack(pady=5, padx=10, anchor="w")
 
     def create_scripts_button(self,name,image,frame):
         music_button = ctk.CTkButton(frame, image=image, text=name, compound="left", command=lambda: self.open_scripts_folder(name))

@@ -9,6 +9,7 @@ from HomeFrame.HomeFrame import HomeFrame  # Import the new HomeFrame class
 from WebUpload.WebUpload import UploadToWeb
 from Database.Database import ModifyDatabase
 from Reddit.Reddit import RedditScraper
+from Chalkboard.Chalkboard import Chalkboard
 from backend.firebase import (
     list_folders_in_bucket,get_videos_from_folder
 )
@@ -42,7 +43,7 @@ class App(customtkinter.CTk):
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(9, weight=1)
+        self.navigation_frame.grid_rowconfigure(10, weight=1)
         self.navigation_frame.grid_forget()  # Hide navigation frame initially
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Image Example", image=self.logo_image,
@@ -90,12 +91,18 @@ class App(customtkinter.CTk):
         self.reddit_scraper_button.grid(row=8, column=0, sticky="ew")
 
 
+        self.chalkboard_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Chalkboard",
+                                                        fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                                        image=self.add_user_image, anchor="w", command=self.chalkboard_button_event)
+        self.chalkboard_button.grid(row=9, column=0,sticky="ew")
+
+
         self.vertical_separator = customtkinter.CTkFrame(self.navigation_frame, width=2, fg_color="white")
         self.vertical_separator.grid(row=0, column=1, rowspan=9, sticky="ns")  # Span all rows vertically
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame, values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
-        self.appearance_mode_menu.grid(row=9, column=0, padx=20, pady=20, sticky="s")
+        self.appearance_mode_menu.grid(row=10, column=0, padx=20, pady=20, sticky="s")
 
 
         self.auth_frame = AuthPage(self, controller=self)  # Login screen frame
@@ -126,6 +133,7 @@ class App(customtkinter.CTk):
         self.upload_to_web_frame = UploadToWeb(self, controller=self)
         self.database_frame = ModifyDatabase(self, controller=self)
         self.reddit_scraper_frame = RedditScraper(self, controller=self)
+        self.chalkboard_frame = Chalkboard(self,controller=self)
 
     def show_home_page(self):
         """Displays the home page after successful login."""
@@ -169,7 +177,7 @@ class App(customtkinter.CTk):
         self.upload_to_web_button.configure(fg_color=("gray75", "gray25") if name == "Web Upload" else "transparent")
         self.modify_database_button.configure(fg_color=("gray75", "gray25") if name == "Database" else "transparent")
         self.reddit_scraper_button.configure(fg_color=("gray75", "gray25") if name == "Reddit Scraper" else "transparent")
-
+        self.chalkboard_button.configure(fg_color=("gray75", "gray25") if name == "Chalkboard" else "transparent")
         # show selected frame
         # Replace the use of pack for home_frame with grid
         if name == "home":
@@ -203,6 +211,9 @@ class App(customtkinter.CTk):
             self.database_frame.grid_forget()
         if name == "Reddit Scraper":
             self.reddit_scraper_frame.grid(row=0,column=1,sticky="nsew")
+        if name == "Chalkboard":
+            self.chalkboard_frame.grid(row=0,column=1,sticky="nsew")
+
         else:
             self.reddit_scraper_frame.grid_forget()
 
@@ -229,6 +240,9 @@ class App(customtkinter.CTk):
 
     def reddit_scraper_button_event(self):
         self.select_frame_by_name("Reddit Scraper")
+
+    def chalkboard_button_event(self):
+        print("chalkboard")
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
