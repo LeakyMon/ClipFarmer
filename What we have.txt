@@ -14,7 +14,14 @@ NEEDS work
 
 NEW PLANS
 - Find a way to create a simplistic AI to separate videos by parts or something
+- Find a way to make an executable
+- Figure out how to use on mac / other platforms
+- B Roll
+- Lets add some music
 
+Next Steps?
+
+- For now lets focus on just pumping out content
 
 
 Upload to Youtube X
@@ -50,3 +57,10 @@ CUSTOMTKINTER
 PILLOW
 REQUESTS
 MOVIEPY
+
+
+# CURRENT BUGS:
+ - Letterbox no longer functions properly
+ - TTS audio is longer than the duraiton set by the video
+ - Scripts and music cannot be removed
+ - Captions and subtitles do not function together
