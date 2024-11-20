@@ -83,15 +83,15 @@ class VideoGenerator:
 
         # --- STEP 2. FIND AUDIO/SUBTITLE SOURCE --- #
         audio_source = first_clip_path if self.modifications['audio_top'] else second_clip_path
-        if self.modifications['subtitles_top'] == True:
+        subtitle_source = None
+
+        if self.modifications['subtitles_top']:
             subtitle_source = first_clip_path
-        elif self.modifications['subtitles_second_clip'] == True:
+        elif self.modifications['subtitles_second_clip']:
             subtitle_source = second_clip_path
-        elif self.modifications['script_text'] != None:
+        elif self.modifications['script_text']:
             subtitle_source = "tts"
-        else:
-            subtitle_source = None
-        #subtitle_source = first_clip_path if self.modifications['subtitles_top'] else second_clip_path
+
         print("AUDIO SOURCE:", audio_source)
         print("SUBTITLE SOURCE", subtitle_source)
 
@@ -101,28 +101,44 @@ class VideoGenerator:
         # Reload the combined video as a VideoClip object after combining
         combined_clip = VideoFileClip(combined_clip_path)
 
-        # --- STEP 4. CHECK IF CAPTION IS PROVIDED --- #
-        if self.modifications['caption'] != '':
-            print("caption exists")
-            # Apply the caption if it's provided and return the final video
+        # --- STEP 4. CHECK FOR CAPTION AND SUBTITLES --- #
+        caption_applied = False
+        if self.modifications['caption']:
+            print("Caption exists, applying caption...")
             combined_clip = self.apply_caption(combined_clip, self.modifications["caption"])
+            caption_applied = True
+
+        # Check if subtitles are required
+        subtitle_path = None
+        if subtitle_source:
+            print("Subtitles detected, processing...")
+            subtitle_path = self.speechToText(audioFilePath)
+
+        # --- STEP 5. BURN SUBTITLES AND CAPTION --- #
+        final_path = combined_clip_path  # Default to combined video path
+
+        if caption_applied and subtitle_path:
+            print("Burning both caption and subtitles into the video...")
+            # Save the captioned video temporarily
+            temp_captioned_path = os.path.join(output_dir, "captioned_output.mp4")
+            combined_clip.write_videofile(temp_captioned_path, audio_codec='aac')
+
+            # Burn subtitles onto the captioned video using FFmpeg
+            final_path = self.add_subtitles_with_ffmpeg(temp_captioned_path, subtitle_path)
+        elif subtitle_path:
+            print("Burning subtitles only...")
+            final_path = self.add_subtitles_with_ffmpeg(combined_clip_path, subtitle_path)
+        elif caption_applied:
+            print("Caption applied only...")
             final_path = os.path.join(output_dir, "combined_output_with_caption.mp4")
             combined_clip.write_videofile(final_path, audio_codec='aac')
-        elif self.modifications['subtitles_top'] or self.modifications['subtitles_second_clip']:
-            # --- STEP 5. EXTRACT AUDIO AND ADD SUBTITLES IF NO CAPTION --- #
-            ass_path = self.speechToText(audioFilePath)
 
-            # --- STEP 6. ADD SUBTITLES TO VIDEO --- #
-            final_path = self.add_subtitles_with_ffmpeg(combined_clip_path, ass_path)
-        else:
-            final_path = combined_clip_path
-        # --- STEP 7. GENERATE THUMBNAIL --- #
+        # --- STEP 6. GENERATE THUMBNAIL --- #
         output_thumbnail = self.add_thumbnail(final_path)
 
         print("Final path: ", final_path)
         print("Thumbnail path: ", output_thumbnail)
         self.thumbnail = output_thumbnail
-        #self.add_to_library(final_path, output_thumbnail)
 
         try:
             if combined_clip:
@@ -318,6 +334,7 @@ class VideoGenerator:
 
             first_clip = self.apply_letterbox(first_clip, target_width, target_height)
 
+
         elif self.modifications["script_text"]:
             print("Use Eleven Labs for narration")
             narration_filepath = narrate_story_elevenlabs(self.modifications["script_text"])
@@ -325,6 +342,10 @@ class VideoGenerator:
                 original_audio = AudioFileClip(narration_filepath)
                 
         # Load the second clip if provided
+        
+        elif second_video is None:
+            original_audio = first_clip.audio
+        
         if second_video:
             print("second video")
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)

@@ -24,6 +24,12 @@ class CreateVideoPage(ctk.CTkFrame):
         self.music_selection = None
         self.script = None
 
+        self.selected_music = None
+        self.selected_music_label = None
+        self.selected_script = None
+        self.selected_script_label = None
+
+
         self.modifications = {
             "subtitles_top": True,
             "subtitles_second_clip": False,
@@ -479,13 +485,16 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def select_script(self, script):
         print(f"Selected script: {script['title']}")
-    
-    # Clear any existing text in the textbox
-        self.script_textbox.delete("1.0", tk.END)  # Clear the textbox content
-    
-    # Insert the selected script's text
-        self.script_textbox.insert(tk.END, script['text'])  # Insert the script text into the textbox
-        self.script = script['text']
+        self.selected_script = script
+
+        # Display the selected script on the interface
+        if self.selected_script_label is None:
+            self.selected_script_label = ctk.CTkLabel(self, text=f"Script: {script['title']}", font=("Arial", 14))
+            self.selected_script_label.pack(pady=10, padx=10)
+            self.selected_script_label.bind("<Button-1>", lambda event: self.show_remove_option("script"))
+        else:
+            self.selected_script_label.configure(text=f"Script: {script['title']}")
+
     def reset(self):
         print("Resetting")
         
@@ -527,4 +536,16 @@ class CreateVideoPage(ctk.CTkFrame):
         self.script_textbox.delete("1.0", tk.END)  # Clear the textbox content
         self.script_text = None
         
+
+    def select_music(self, music):
+        print(f"Selected music: {music['title']}")
+        self.selected_music = music
+
+        # Display the selected music on the interface
+        if self.selected_music_label is None:
+            self.selected_music_label = ctk.CTkLabel(self, text=f"Music: {music['title']}", font=("Arial", 14))
+            self.selected_music_label.pack(pady=10, padx=10)
+            self.selected_music_label.bind("<Button-1>", lambda event: self.show_remove_option("music"))
+        else:
+            self.selected_music_label.configure(text=f"Music: {music['title']}")
 
