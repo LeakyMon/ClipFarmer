@@ -211,11 +211,13 @@ class App(customtkinter.CTk):
             self.database_frame.grid_forget()
         if name == "Reddit Scraper":
             self.reddit_scraper_frame.grid(row=0,column=1,sticky="nsew")
-        if name == "Chalkboard":
-            self.chalkboard_frame.grid(row=0,column=1,sticky="nsew")
-
         else:
             self.reddit_scraper_frame.grid_forget()
+            
+        if name == "Chalkboard":
+            self.chalkboard_frame.grid(row=0,column=1,sticky="nsew")
+        else:
+            self.chalkboard_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
