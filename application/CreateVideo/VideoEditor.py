@@ -284,9 +284,12 @@ class CreateVideoPage(ctk.CTkFrame):
     def create_folder_view(self):
         """Restores the folder view."""
         # Clear current frame content
+
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         # Create folder buttons again
+        self.scrollable_frame._parent_canvas.yview_moveto(0)
+
         self.create_folder_button("Background", self.folder_photo)
         self.create_folder_button("Overlay", self.folder_photo)
     def create_music_view(self):
@@ -294,6 +297,9 @@ class CreateVideoPage(ctk.CTkFrame):
         # Clear current frame content
         for widget in self.scrollable_frame_music.winfo_children():
             widget.destroy()
+
+        self.scrollable_frame_music._parent_canvas.yview_moveto(0)
+
 
         # Create folder buttons again
         self.create_music_folder_button("Music", self.folder_photo, self.scrollable_frame_music)
