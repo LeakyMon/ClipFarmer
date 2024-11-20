@@ -89,36 +89,42 @@ class UploadFrame(ctk.CTkFrame):
         save_path = os.path.join(os.getcwd(), "videos")
         os.makedirs(save_path, exist_ok=True)  # Ensure the save path exists
 
-        filename = f'{title}.mp4'
+        video_path = os.path.join(save_path, f"{title}.mp4")
+        temp_video_path = os.path.join(save_path, f"{title}_temp_video.mp4")
+        temp_audio_path = os.path.join(save_path, f"{title}_temp_audio.mp4")
 
-        # Download the best video and audio separately and merge them
         ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',  # Download the best video and best audio separately
-            'outtmpl': f'{save_path}/{filename}',
-            'merge_output_format': 'mp4',  # Ensure that the output is merged into an mp4 file
-            'rm-cache-dir': True,  # Clear the cache before downloading
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'aac',  # Convert the audio to AAC format
-                'preferredquality': '192'
-            }, {
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4'  # Ensure final output is MP4
-            }]
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',  # Download best video and best audio
+            'outtmpl': temp_video_path,  # Temporary file for the video
+            'merge_output_format': 'mp4',  # Ensure MP4 output format
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        video_path = f'{save_path}/{filename}'
-        print(f"Downloaded video to {video_path}")
+        # Merge video and audio using FFmpeg
+        try:
+            (
+                ffmpeg
+                .input(temp_video_path)
+                .output(video_path, vcodec='copy', acodec='copy', movflags='faststart')
+                .run(overwrite_output=True)
+            )
+            print(f"Video and audio merged successfully: {video_path}")
+        except ffmpeg.Error as e:
+            print(f"Error merging video and audio: {e}")
 
-        # Generate a thumbnail
+        # Cleanup temporary files
+        if os.path.exists(temp_video_path):
+            os.remove(temp_video_path)
+        if os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+
+        # Proceed with thumbnail generation and Firebase upload
         thumbnail_path = self.generate_thumbnail(video_path)
         duration = get_video_duration(video_path)
-
-        # Upload Video and Thumbnail to Firebase Storage
         self.upload_to_firebase(title, folder, video_path, thumbnail_path, duration)
+
 
 
     def download_mp3(self, url, title, folder):
