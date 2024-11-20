@@ -10,6 +10,7 @@ from WebUpload.WebUpload import UploadToWeb
 class VideoPlayerFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
+        print("video Player Frame init")
         self.controller = controller
 
         self.video_file = None  # To store the selected video file
@@ -70,10 +71,23 @@ class VideoPlayerFrame(ctk.CTkFrame):
         self.is_playing = False
         if self.cap:
             self.cap.release()  # Release the video capture object
-        pygame.mixer.music.stop()  # Stop the audio playback
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()  # Stop the audio playback
+
+        pygame.mixer.quit()  # Unload the mixer to release the file
+        pygame.mixer.init()  # Reinitialize for future use
+
 
         # Clear the canvas by deleting any existing image
         self.video_canvas.delete("all")
+
+        # Delete the temporary audio file
+        if self.audio_file and os.path.exists(self.audio_file):
+            try:
+                os.remove(self.audio_file)
+                print(f"Deleted temporary audio file: {self.audio_file}")
+            except Exception as e:
+                print(f"Error deleting audio file {self.audio_file}: {e}")
 
         # Clear the video and audio file variables
         self.video_file = None
@@ -120,6 +134,7 @@ class VideoPlayerFrame(ctk.CTkFrame):
             self.load_video(self.video_file)
 
     def load_video(self, filepath):
+        print("loading video")
         """Load the selected video, extract audio, and display the video."""
         self.video_file = filepath  # Use the provided filepath
         self.cap = cv2.VideoCapture(self.video_file)  # Open the video file
@@ -132,16 +147,22 @@ class VideoPlayerFrame(ctk.CTkFrame):
 
     def extract_audio(self):
         """Extract audio from the video file and save it as a temporary .wav file."""
+        print("VP: Extracting audio")
         if self.video_file:
-            # Extract the audio using moviepy
-            video_clip = VideoFileClip(self.video_file)
-            audio = video_clip.audio
-            self.audio_file = "temp_audio.wav"  # Save audio as a temporary wav file
-            audio.write_audiofile(self.audio_file)
+            video_clip = None
+            try:
+                video_clip = VideoFileClip(self.video_file)  # Load the video
+                audio = video_clip.audio
+                self.audio_file = "temp_audio.wav"  # Temporary audio file
+                audio.write_audiofile(self.audio_file)  # Save the audio
+                pygame.mixer.music.load(self.audio_file)  # Load into pygame
+                pygame.mixer.music.set_volume(1)  # Set volume to 100%
+            except Exception as e:
+                print(f"Error extracting audio: {e}")
+            finally:
+                if video_clip:
+                    video_clip.close()  # Ensure the video file is released
 
-            # Load the extracted audio into pygame
-            pygame.mixer.music.load(self.audio_file)  # Load the extracted audio
-            pygame.mixer.music.set_volume(1)  # Set default volume to 100%
 
     def pause_video(self):
         """Pause the video and audio playback."""
@@ -161,6 +182,7 @@ class VideoPlayerFrame(ctk.CTkFrame):
         pygame.mixer.music.set_volume(float(volume))  # Set the volume based on slider position
 
     def on_closing(self):
+        print("On close")
         """Release video capture and stop audio when the window is closed."""
         if self.cap:
             self.cap.release()

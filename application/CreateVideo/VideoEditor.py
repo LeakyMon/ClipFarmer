@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from backend.firebase import get_videos_from_folder  # Import function to fetch videos
 ### --- BOTTOM AUDIO IS SECOND CLIP --- ###
 from CreateVideo.VideoGenerator import VideoGenerator  # Import the VideoGenerator class
-
+import time
 class CreateVideoPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -286,7 +286,6 @@ class CreateVideoPage(ctk.CTkFrame):
         # Clear current frame content
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
-
         # Create folder buttons again
         self.create_folder_button("Background", self.folder_photo)
         self.create_folder_button("Overlay", self.folder_photo)
@@ -344,23 +343,29 @@ class CreateVideoPage(ctk.CTkFrame):
 
     def submit(self):
         print("submitting with current mods")
+        # Ensure VideoPlayerFrame resources are cleaned up
+        if hasattr(self.controller, 'videoplayer_frame'):
+            self.controller.videoplayer_frame.back_to_video_editor()
+
         complete = self.update_modifications()
         if complete:
             video_generator = VideoGenerator(
-            modifications=self.modifications,        # Pass modifications dictionary
-            first_video_data=self.first_video_data,  # Pass the first selected video data
-            second_video_data=self.second_video_data # Pass the second selected video data (or None if single video)
+                modifications=self.modifications,
+                first_video_data=self.first_video_data,
+                second_video_data=self.second_video_data
             )
-        
-        # After the video generation process is completed
-            print(f"Video generated and saved to: {video_generator.filepath}")
-            self.reset()
+
+            # Cleanup temp files from the previous run
             video_generator.cleanup_temp_files()
+
+            # After the video generation process is completed
+            print(f"Video generated and saved to: {video_generator.filepath}")
             self.controller.videoplayer_frame.load_video(video_generator.getFilepath())
             self.controller.select_frame_by_name("Video Player")
+            self.reset()
+
         else:
             return
-        ### --- HERE IS WHERE WE NEED TO RENDER THE VIDEO ACCORDING TO THE MODIFICATIONS --- ###
 
     def undo_last_video(self):
         """Removes the last added video. If both videos are selected, remove the second; else remove the first."""

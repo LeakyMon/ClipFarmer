@@ -39,6 +39,7 @@ transcriber = aai.Transcriber(config=config)
 
 class VideoGenerator:
     def __init__(self, modifications, first_video_data=None, second_video_data=None):
+        print("VideoGenerator Init")
         self.modifications = modifications
         self.first_video_data = first_video_data
         self.second_video_data = second_video_data
@@ -59,6 +60,7 @@ class VideoGenerator:
 
     def get_clip_duration(self):
         """Determine whether to use 'length' or 'duration' based on what's provided."""
+        print("get_clip_duration")
         length = self.modifications['length']
         duration = self.modifications['duration']
 
@@ -71,7 +73,7 @@ class VideoGenerator:
 
     def create_video(self):
         outputPath = os.path.join(output_dir, "output_subtitles.mp4")
-        print("output path in create video", outputPath)
+        print("create_video: output path in create video", outputPath)
         
         # --- STEP 1. DOWNLOAD VIDEOS --- #
         first_clip_path = self.download_video(self.first_video_data['url'], "first_video.mp4")
@@ -121,12 +123,18 @@ class VideoGenerator:
         print("Thumbnail path: ", output_thumbnail)
         self.thumbnail = output_thumbnail
         #self.add_to_library(final_path, output_thumbnail)
-        combined_clip.close()
+
+        try:
+            if combined_clip:
+                combined_clip.close()
+        except Exception as e:
+            print(f"Error closing combined_clip: {e}")
 
         return final_path
 
 
     def create_tiktok_text(self, size: tuple, message: str, fontColor, fnt=ImageFont.truetype('arial.ttf', 70)):
+        print("create_tiktok_text")
         espacement = 13
         W, H = size
         image = Image.new('RGBA', size, (0, 0, 0, 0))
@@ -141,6 +149,7 @@ class VideoGenerator:
 
     def apply_caption(self, video_clip, caption_text):
         """Apply the caption and emojis to the video using MoviePy."""
+        print("apply_caption")
         
         # Ensure video_clip is a VideoClip object
         if not isinstance(video_clip, VideoClip):
@@ -228,6 +237,7 @@ class VideoGenerator:
 
     def add_emoji_clips(self, video_size, caption_size, caption_width, emojis):
         """Create ImageClips for emojis and position them next to the caption."""
+        print("add_emoji_clips")
         W, H = video_size  # Video dimensions
         emoji_clips = []
         emoji_size = 40  # Adjust size of the emojis
@@ -255,6 +265,7 @@ class VideoGenerator:
 
     def extract_emojis_from_caption(self):
         """Extract emojis from the caption text and return the updated caption without emojis."""
+        print("extract_emojis_from_caption")
         caption_text = self.modifications["caption"]
         emojis = []
         new_caption = ""
@@ -271,6 +282,7 @@ class VideoGenerator:
 
     def download_video(self, url, filename):
         """Download video from URL and save it to the output directory."""
+        print("download_video")
         save_path = os.path.join(output_dir, filename)
         try:
             print(f"Downloading video from {url}")
@@ -284,6 +296,7 @@ class VideoGenerator:
 
     def combine_videos(self, first_video, second_video=None):
         """Combine one or two video clips based on the user's selection."""
+        print("combine_videos")
         target_width = 720
         target_height = 1280
         original_audio = None  # Initialize original_audio
@@ -313,11 +326,13 @@ class VideoGenerator:
                 
         # Load the second clip if provided
         if second_video:
+            print("second video")
             second_clip = VideoFileClip(second_video).subclip(0, self.clip_duration)
             combined_clip = clips_array([[second_clip], [first_clip]])  # Stack second video on top, first on bottom
             if self.modifications['subtitles_second_clip']:
                 original_audio = second_clip.audio
         else:
+            print("else")
             first_clip = first_clip.resize(height=target_height).on_color(
             size=(target_width, target_height),  # Resize to fit 9:16
             color=(0, 0, 0),  # Black background
@@ -341,7 +356,7 @@ class VideoGenerator:
         combined_clip.write_videofile(output_filepath, audio_codec='aac')
         self.combinedFilePath = output_filepath  # Store the combined file path for future use
 
-
+        """
         first_clip.close()
         if second_video:
             second_clip.close()
@@ -349,7 +364,23 @@ class VideoGenerator:
             original_audio.close()
         if combined_clip:
             combined_clip.close()
+        """
 
+        
+        
+
+        # Ensure resources are explicitly closed
+        try:
+            if first_clip:
+                first_clip.close()
+            if second_video and second_clip:
+                second_clip.close()
+            if combined_clip:
+                combined_clip.close()
+            if original_audio:
+                original_audio.close()
+        except Exception as e:
+            print(f"Error closing clips: {e}")
 
 
         return self.combinedFilePath
@@ -358,7 +389,7 @@ class VideoGenerator:
 
     def apply_letterbox(self, clip, target_width, target_height):
         """Resize the video to fit within the target aspect ratio (9:16) and add letterboxing."""
-        
+        print("apply_letterbox")
         # Resize the clip while maintaining the aspect ratio and adding letterboxing
         resized_clip = clip.resize(height=target_height).on_color(
             size=(target_width, target_height),  # Set the desired final size
@@ -372,7 +403,7 @@ class VideoGenerator:
 
     def add_subtitles_with_ffmpeg(self, video_path, subtitle_path):
         """Add subtitles to the video using FFmpeg."""
-        
+        print("add_subtitles_with_ffmpeg")
         output_path = "combined_output_with_subs.mp4"
         subtitle_path = "subtitles.ass"
         video_path = "combined_output.mp4"
@@ -537,6 +568,7 @@ class VideoGenerator:
 
 
     def add_thumbnail(self, video_path):
+        print("add_thumbnail")
         """Generate a thumbnail from the video."""
         output_thumbnail = os.path.join(output_dir, "thumbnail.jpg")
         command = [
@@ -546,6 +578,7 @@ class VideoGenerator:
         return output_thumbnail
 
     def add_to_library(self, filepath, thumbnail):
+        print("add_to_library")
         folder_type = "CreatedVideos"  # Folder where the videos and thumbnails are stored
         title = self.modifications['title']  # Video title from modifications
 
@@ -562,10 +595,8 @@ class VideoGenerator:
 
         print(f"Video '{title}' successfully uploaded to Firebase Storage and metadata saved in Firestore.")
 
-   
-
     def cleanup_temp_files(self):
-        """Delete all temporary files like .mp4, .wav, .ass, and .srt."""
+        print("cleanup_temp_files")
         temp_files = [
             os.path.join(output_dir, "output_audio.wav"),
             os.path.join(output_dir, "temp_audio.wav"),
@@ -580,10 +611,17 @@ class VideoGenerator:
         for file in temp_files:
             try:
                 if os.path.exists(file):
+                    # Check if the file is in use (on Windows)
+                    if os.name == 'nt':
+                        try:
+                            os.rename(file, file)  # Try renaming to check if it's locked
+                        except OSError:
+                            print(f"File is locked and cannot be deleted: {file}")
+                            continue
+
                     os.remove(file)
                     print(f"Deleted temporary file: {file}")
                 else:
                     print(f"File not found, skipping: {file}")
             except Exception as e:
                 print(f"Error deleting file {file}: {e}")
-
