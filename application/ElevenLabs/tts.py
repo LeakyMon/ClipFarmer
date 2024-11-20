@@ -10,6 +10,8 @@ def narrate_story_elevenlabs(text):
     print("IN NARRATE ELEMENTS")
 
     narration_filepath = 'story_narration.mp3'
+    #narration_filepath = 'temp_audio.wav'
+
 
     # Check if narration file already exists
     if os.path.exists(narration_filepath):

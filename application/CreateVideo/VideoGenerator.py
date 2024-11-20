@@ -602,7 +602,7 @@ class VideoGenerator:
             os.path.join(output_dir, "temp_audio.wav"),
             os.path.join(output_dir, "subtitles.ass"),
             os.path.join(output_dir, "subtitles.srt"),
-            os.path.join(output_dir, "combined_output.mp4"),
+            #os.path.join(output_dir, "combined_output.mp4"),
             os.path.join(output_dir, "first_video.mp4"),
             os.path.join(output_dir, "second_video.mp4"),
             os.path.join(output_dir, "thumbnail.jpg"),
